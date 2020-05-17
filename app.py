@@ -10,8 +10,12 @@ server = Flask(__name__)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    print(message)
     bot.reply_to(message, 'Hello, ' + message.from_user.first_name)
+
+@server.route('/' + TOKEN, methods=['POST'])
+def getMessage():
+    bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+    return "!", 200
 
 @server.route("/")
 def webhook():
