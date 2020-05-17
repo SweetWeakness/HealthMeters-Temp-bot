@@ -11,13 +11,17 @@ server = Flask(__name__)
 
 @bot.message_handler(commands=['start'])
 def start(message):
+    bot.reply_to(message, 'Введите код вашей лицензии')
+
+@bot.message_handler(content_types=['text'])
+def text_handler(message):
     if message.text == '1337':
         bot.reply_to(message, 'Hello, ' + message.from_user.first_name, reply_markup=get_main_admin_keyboard())
     else:
         bot.reply_to(message, 'Wrong license code')
 
 @server.route('/' + TOKEN, methods=['POST'])
-def getMessage():
+def get_message():
     bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
     return "!", 200
 
