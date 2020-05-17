@@ -1,6 +1,6 @@
 import os
 import telebot
-from flask import Flask, requests
+from flask import Flask, request
 
 
 TOKEN = '1245516512:AAFAPDaDe2DwPgqTZxy4eanjSpLd5VigsUg'
