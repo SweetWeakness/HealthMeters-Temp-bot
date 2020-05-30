@@ -15,7 +15,8 @@ server = Flask(__name__)
 
 def pretty_date(ugly_date):
     date = time.strptime(ugly_date, '%Y-%m-%dT%H:%M:%SZ')
-    return '{}.{}.{} {}:{}'.format(date.tm_mday, date.tm_mon, date.tm_year, date.tm_hour, date.tm_min)
+    #return '{}.{}.{} {}:{}'.format(date.tm_mday, date.tm_mon, date.tm_year, date.tm_hour, date.tm_min)
+    return str(date)
 
 @bot.message_handler(commands=['start'])
 def start(message):
