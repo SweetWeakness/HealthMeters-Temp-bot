@@ -34,7 +34,7 @@ def get_manager_keyboard():
     button3 = telebot.types.KeyboardButton(text=localization.common_stat)
     button4 = telebot.types.KeyboardButton(text=localization.ask_temp)
 
-    keyboard.add(button4, button3, button2, button1)
+    keyboard.add(button4, button3, button2)
 
     return keyboard
 
