@@ -16,6 +16,7 @@ server = Flask(__name__)
 def start(message):
     uid = message.from_user.id
     role = ar.user_have_access(uid)
+    print(role)
     if role == 'manager':
         bot.reply_to(message, reply_markup=keyboards.get_manager_keyboard())
     elif role == 'worker':
