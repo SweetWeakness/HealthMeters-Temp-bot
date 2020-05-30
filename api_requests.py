@@ -5,10 +5,11 @@ server_url = 'http://151.248.122.100:8000'
 
 def user_have_access(uid):
     print(uid)
-    res = requests.get(server_url + '/position', data={
+    res = requests.post(server_url + '/position', data={
         'telegram_id': uid
     })
     res_json = res.json()
+    print(res_json)
     try:
         return res_json['position']
     except:
