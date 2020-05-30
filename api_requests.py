@@ -17,8 +17,9 @@ def user_have_access(uid):
         return ''
 
 def get_manager_list(uid):
-    res = requests.get(server_url + '/list/', data={
-        'telegram_id': str(uid)
+    res = requests.post(server_url + '/list/', data={
+        "type": "manage_list",
+        "telegram_id": str(uid)
     })
     return res.json()
 
