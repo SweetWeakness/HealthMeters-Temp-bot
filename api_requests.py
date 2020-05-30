@@ -8,6 +8,7 @@ def user_have_access(uid):
     res = requests.post(server_url + '/position', data={
         'telegram_id': uid
     })
+    print(res.text)
     res_json = res.json()
     print(res_json)
     try:
