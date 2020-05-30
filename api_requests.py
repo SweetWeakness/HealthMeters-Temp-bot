@@ -18,14 +18,14 @@ def user_have_access(uid):
 
 def get_manager_list(uid):
     res = requests.get(server_url + '/list/', data={
-        'telegram_id': uid
+        'telegram_id': str(uid)
     })
     return res.json()
 
 def get_manager_stat(uid):
     res = requests.get(server_url + '/statistic/', data={
         "type": "manage_statistics",
-        "telegram_id": uid
+        "telegram_id": str(uid)
     })
     return res.json()
 

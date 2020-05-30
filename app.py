@@ -18,9 +18,9 @@ def start(message):
     role = ar.user_have_access(uid)
     print(role)
     if role == 'manager':
-        bot.reply_to(message, reply_markup=keyboards.get_manager_keyboard())
+        bot.reply_to(message, '', reply_markup=keyboards.get_manager_keyboard())
     elif role == 'worker':
-        bot.reply_to(message, reply_markup=keyboards.get_employee_keyboard())
+        bot.reply_to(message, '', reply_markup=keyboards.get_employee_keyboard())
     else:
         bot.reply_to(message, 'У вас нет доступа. Обратитесь к администратору.')
 
