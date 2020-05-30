@@ -26,7 +26,7 @@ def start(message):
 
 @bot.message_handler(content_types=['photo'])
 def photo_handler(message):
-    bot.reply_to(message, reply_markup=keyboards.get_employee_keyboard())
+    bot.reply_to(message, 'Спасибо!', reply_markup=keyboards.get_employee_keyboard())
 
 @bot.message_handler(content_types=['text'])
 def text_handler(message):
@@ -39,7 +39,11 @@ def text_handler(message):
             ar.add_worker_temp(uid, message.text)
             bot.reply_to(message, 'Сфотографируйте термометр')
         elif message.text == localization.list_attach_employee:
-            bot.reply_to(message, str(ar.get_manager_list(uid)), reply_markup=keyboards.get_manager_keyboard())
+            e_list = ar.get_manager_list(uid)['users']
+            ans = 'Список сотрудников:\n'
+            for u in e_list:
+                ans += u['full_name'] + ' @' + u['telegram_nick'] + '\n'
+            bot.reply_to(message, ans, reply_markup=keyboards.get_manager_keyboard())
         elif message.text == localization.common_stat:
             bot.reply_to(message, str(ar.get_manager_stat(uid)), reply_markup=keyboards.get_manager_keyboard())
     else:

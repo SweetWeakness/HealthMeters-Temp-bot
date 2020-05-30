@@ -29,7 +29,7 @@ def get_main_admin_keyboard():
 def get_manager_keyboard():
     keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
 
-    button1 = telebot.types.KeyboardButton(text=localization.stat_employee)
+    #button1 = telebot.types.KeyboardButton(text=localization.stat_employee)
     button2 = telebot.types.KeyboardButton(text=localization.list_attach_employee)
     button3 = telebot.types.KeyboardButton(text=localization.common_stat)
     button4 = telebot.types.KeyboardButton(text=localization.ask_temp)
