@@ -53,7 +53,10 @@ def text_handler(message):
             e_stat = ar.get_manager_stat(uid)['users']
             ans = ''
             for measure in e_stat:
-                ans += measure['full_name'] + ' ' + str(measure['last_temp']) + ' ' + pretty_date(measure['date']) + '\n'
+                p_date = ''
+                if 'date' in measure:
+                    p_date = pretty_date(measure['date'])
+                ans += measure['full_name'] + ' ' + str(measure['last_temp']) + ' ' + p_date + '\n'
             bot.reply_to(message, ans, reply_markup=keyboards.get_manager_keyboard())
     else:
         bot.reply_to(message, 'Wrong license code!')
