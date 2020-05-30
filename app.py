@@ -57,7 +57,7 @@ def text_handler(message):
                 if 'date' in measure:
                     p_date = pretty_date(measure['date'])
                 temp = '-'
-                if not re.match(r'^-?\d+(?:\.\d+)?$', measure['last_temp']) is None:
+                if not re.match(r'^-?\d+(?:\.\d+)?$', str(measure['last_temp'])) is None:
                     temp = str(measure['last_temp'])
                 ans += '__' + measure['full_name'] + '__ **' + temp + '** ' + p_date + '\n'
             bot.reply_to(message, ans, reply_markup=keyboards.get_manager_keyboard())
