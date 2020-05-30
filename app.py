@@ -28,7 +28,7 @@ def start(message):
 def photo_handler(message):
     bot.reply_to(message, reply_markup=keyboards.get_employee_keyboard())
 
-@bot.message_handler(commands=['text'])
+@bot.message_handler(content_types=['text'])
 def text_handler(message):
     uid = message.from_user.id
     role = ar.user_have_access(uid)
