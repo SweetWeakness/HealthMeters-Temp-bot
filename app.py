@@ -47,7 +47,7 @@ def text_handler(message):
             e_list = ar.get_manager_list(uid)['users']
             ans = 'Список сотрудников:\n'
             for u in e_list:
-                ans += '__' + u['full_name'] + '__ @' + u['telegram_nick'] + '\n'
+                ans += '_' + u['full_name'] + '_ @' + u['telegram_nick'] + '\n'
             bot.reply_to(message, ans, reply_markup=keyboards.get_manager_keyboard(), parse_mode='markdown')
         elif message.text == localization.common_stat:
             e_stat = ar.get_manager_stat(uid)['users']
@@ -59,7 +59,7 @@ def text_handler(message):
                 temp = '-'
                 if not re.match(r'^-?\d+(?:\.\d+)?$', str(measure['last_temp'])) is None:
                     temp = str(measure['last_temp'])
-                ans += '__' + measure['full_name'] + '__ **' + temp + '** ' + p_date + '\n'
+                ans += '_' + measure['full_name'] + '_ *' + temp + '* ' + p_date + '\n'
             bot.reply_to(message, ans, reply_markup=keyboards.get_manager_keyboard(), parse_mode='markdown')
         elif message.text == localization.ask_temp:
             e_list = ar.get_manager_list(uid)['users']
