@@ -14,7 +14,7 @@ server = Flask(__name__)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    uid = message.from_user.user_id
+    uid = message.from_user.id
     role = ar.user_have_access(uid)
     if role == 'manager':
         bot.reply_to(message, reply_markup=keyboards.get_manager_keyboard())
@@ -29,7 +29,7 @@ def photo_handler(message):
 
 @bot.message_handler(commands=['text'])
 def text_handler(message):
-    uid = message.from_user.user_id
+    uid = message.from_user.id
     role = ar.user_have_access(uid)
     if role:
         if message.text == localization.measure_temp:
