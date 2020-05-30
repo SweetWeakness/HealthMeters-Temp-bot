@@ -1,7 +1,7 @@
 import requests
 
 
-server_url = '151.248.122.100:8000'
+server_url = 'http://151.248.122.100:8000'
 
 def user_have_access(uid):
     print(uid)
