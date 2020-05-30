@@ -1,7 +1,10 @@
 import os
 import telebot
+import re
 from flask import Flask, request
-from keyboards import get_main_admin_keyboard
+import api_requests as ar
+import localization
+import keyboards
 
 
 TOKEN = '1245516512:AAFAPDaDe2DwPgqTZxy4eanjSpLd5VigsUg'
@@ -13,12 +16,26 @@ server = Flask(__name__)
 def start(message):
     bot.reply_to(message, 'Введите код вашей лицензии')
 
-@bot.message_handler(content_types=['text'])
+@bot.message_handler(content_types=['photo'])
+def photo_handler(message):
+    bot.reply_to(message, reply_markup=keyboards.get_employee_keyboard())
+
+@bot.message_handler(commands=['text'])
 def text_handler(message):
-    if message.text == '1337':
-        bot.reply_to(message, 'Hello, ' + message.from_user.first_name, reply_markup=get_main_admin_keyboard())
+    uid = message.from_user.user_id
+    role = ar.user_have_access(uid)
+    if role:
+        if message.text == localization.measure_temp:
+            bot.reply_to(message, 'Введите вашу температуру:')
+        elif not re.match(r'^-?\d+(?:\.\d+)?$', message.text) is None:
+            ar.add_worker_temp(uid, message.text)
+            bot.reply_to(message, 'Сфотографируйте термометр')
+        elif message.text == localization.list_attach_employee:
+            bot.reply_to(message, str(ar.get_manager_list(uid)), reply_markup=keyboards.get_manager_keyboard())
+        elif message.text == localization.common_stat:
+            bot.reply_to(message, str(ar.get_manager_stat(uid)), reply_markup=keyboards.get_manager_keyboard())
     else:
-        bot.reply_to(message, 'Wrong license code')
+        bot.reply_to(message, 'Wrong license code!')
 
 @server.route('/' + TOKEN, methods=['POST'])
 def get_message():
