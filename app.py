@@ -47,7 +47,7 @@ def text_handler(message):
             e_list = ar.get_manager_list(uid)['users']
             ans = 'Список сотрудников:\n'
             for u in e_list:
-                ans += u['full_name'] + ' @' + u['telegram_nick'] + '\n'
+                ans += '__' + u['full_name'] + '__ @' + u['telegram_nick'] + '\n'
             bot.reply_to(message, ans, reply_markup=keyboards.get_manager_keyboard())
         elif message.text == localization.common_stat:
             e_stat = ar.get_manager_stat(uid)['users']
@@ -56,8 +56,15 @@ def text_handler(message):
                 p_date = ''
                 if 'date' in measure:
                     p_date = pretty_date(measure['date'])
-                ans += measure['full_name'] + ' ' + str(measure['last_temp']) + ' ' + p_date + '\n'
+                temp = '-'
+                if not re.match(r'^-?\d+(?:\.\d+)?$', measure['last_temp']) is None:
+                    temp = str(measure['last_temp'])
+                ans += '__' + measure['full_name'] + '__ **' + temp + '** ' + p_date + '\n'
             bot.reply_to(message, ans, reply_markup=keyboards.get_manager_keyboard())
+        elif message.text == localization.ask_temp:
+            e_list = ar.get_manager_list(uid)['users']
+            for u in e_list:
+                bot.send_message(u['telegram_id'], 'Ваш менеджер просит измерить температуру!')
     else:
         bot.reply_to(message, 'Wrong license code!')
 
