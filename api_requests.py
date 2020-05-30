@@ -21,7 +21,9 @@ def get_manager_list(uid):
         "type": "manage_list",
         "telegram_id": str(uid)
     })
-    return res.json()
+    res_json = res.json()
+    print(str(res_json))
+    return res_json
 
 def get_manager_stat(uid):
     res = requests.get(server_url + '/statistic/', data={
