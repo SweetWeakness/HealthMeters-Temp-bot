@@ -14,7 +14,14 @@ server = Flask(__name__)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.reply_to(message, 'Введите код вашей лицензии')
+    uid = message.from_user.user_id
+    role = ar.user_have_access(uid)
+    if role == 'manager':
+        bot.reply_to(message, reply_markup=keyboards.get_manager_keyboard())
+    elif role == 'worker':
+        bot.reply_to(message, reply_markup=keyboards.get_employee_keyboard())
+    else:
+        bot.reply_to(message, 'У вас нет доступа. Обратитесь к администратору.')
 
 @bot.message_handler(content_types=['photo'])
 def photo_handler(message):
