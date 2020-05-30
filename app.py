@@ -41,8 +41,13 @@ def text_handler(message):
         if message.text == localization.measure_temp:
             bot.reply_to(message, 'Введите вашу температуру:')
         elif not re.match(r'^-?\d+(?:\.\d+)?$', message.text) is None:
-            ar.add_worker_temp(uid, message.text)
-            bot.reply_to(message, 'Сфотографируйте термометр')
+            temp = float(message.text)
+            if 33 < temp < 43:
+                ar.add_worker_temp(uid, message.text)
+                bot.reply_to(message, 'Сфотографируйте термометр')
+            else:
+                bot.reply_to(message, 'Проверьте измерения, и обратитесь в больницу, если они верны. ' +
+                                      'Если возникла ошибка, то сообщите верный результат измерений:')
         elif message.text == localization.list_attach_employee:
             e_list = ar.get_manager_list(uid)['users']
             ans = 'Список сотрудников:\n'
