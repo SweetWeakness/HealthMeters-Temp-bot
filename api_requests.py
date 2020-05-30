@@ -4,13 +4,10 @@ import requests
 server_url = 'http://151.248.122.100:8000'
 
 def user_have_access(uid):
-    print(uid)
     res = requests.post(server_url + '/position/', data={
         'telegram_id': str(uid)
     })
-    print(res.text)
     res_json = res.json()
-    print(res_json)
     try:
         return res_json['position']
     except:
@@ -22,7 +19,6 @@ def get_manager_list(uid):
         "telegram_id": str(uid)
     })
     res_json = res.json()
-    print(str(res_json))
     return res_json
 
 def get_manager_stat(uid):

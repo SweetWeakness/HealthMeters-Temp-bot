@@ -1,6 +1,7 @@
 import os
 import telebot
 import re
+import time
 from flask import Flask, request
 import api_requests as ar
 import localization
@@ -11,6 +12,10 @@ TOKEN = '1245516512:AAFAPDaDe2DwPgqTZxy4eanjSpLd5VigsUg'
 bot = telebot.TeleBot(TOKEN)
 
 server = Flask(__name__)
+
+def pretty_date(ugly_date):
+    date = time.strptime(ugly_date, '%Y-%m-%dT%H:%M:%SZ')
+    return '{}.{}.{} {}:{}'.format(date.tm_mday, date.tm_mon, date.tm_year, date.tm_hour, date.tm_min)
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -45,7 +50,11 @@ def text_handler(message):
                 ans += u['full_name'] + ' @' + u['telegram_nick'] + '\n'
             bot.reply_to(message, ans, reply_markup=keyboards.get_manager_keyboard())
         elif message.text == localization.common_stat:
-            bot.reply_to(message, str(ar.get_manager_stat(uid)), reply_markup=keyboards.get_manager_keyboard())
+            e_stat = ar.get_manager_stat(uid)['users']
+            ans = ''
+            for measure in e_stat:
+                ans += measure['full_name'] + ' ' + str(measure['last_temp']) + ' ' + pretty_date(measure['date']) + '\n'
+            bot.reply_to(message, ans, reply_markup=keyboards.get_manager_keyboard())
     else:
         bot.reply_to(message, 'Wrong license code!')
 
