@@ -51,13 +51,12 @@ def start(message) -> None:
     uid = message.from_user.id
     uid = 1488
 
-    role = "no access"
     companies = ar.get_companies_list(uid)
 
     if len(companies) != 0:
         # Todo Изменить на выбор из вариантов
         role = ar.get_role(uid, companies[0])
-        set_start_screen(uid,role,message)
+        set_start_screen(uid, role, message)
 
     else:
         bot.reply_to(message, 'Вас нет в системе. Обратитесь к администратору.')
