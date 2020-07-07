@@ -9,7 +9,7 @@ import database as db
 import api_requests as ar
 import keyboards
 
-
+# Todo: вынести из кода
 TOKEN = '1245516512:AAFAPDaDe2DwPgqTZxy4eanjSpLd5VigsUg'
 bot = telebot.TeleBot(TOKEN)
 
@@ -56,6 +56,7 @@ def start(message):
 
 @bot.message_handler(content_types=['text'])
 def text_handler(message):
+    # ToDo: изменить на проде
     uid = message.from_user.id
     uid = 1488
 
@@ -136,6 +137,8 @@ def get_message():
 
 
 webhook_url = 'https://ac71985b571d.ngrok.io' + '/' + TOKEN
+
+
 # webhook_url = 'https://health-meters-bot.herokuapp.com/' + TOKEN
 
 
