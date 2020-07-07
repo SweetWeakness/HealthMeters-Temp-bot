@@ -18,3 +18,9 @@ class SessionsStorage:
 
     def get_role_stage(self, uid, role):
         return self.sessions.get(str(uid) + '_' + str(role))
+
+    def get_data(self, uid):
+        return self.sessions.get("data" + str(uid))
+
+    def set_data(self, uid, data):
+        self.sessions.set("data" + str(uid), str(data))
