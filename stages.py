@@ -1,21 +1,22 @@
-from enum import Enum
+from enum import IntFlag
 
 MAIN = 0
+ONE = 1
 
 
-class ManagerStage(Enum):
+class ManagerStage(IntFlag):
     GET_INFO = 1
 
 
-class WorkerStage(Enum):
+class WorkerStage(IntFlag):
     GET_TEMP = 2
-    ACCEPT_TEMP = 3
-    VALIDATION_TEMP = 4
+    VALIDATION_TEMP = 3
+    ACCEPT_TEMP = 4
     GET_PHOTO = 5
     ACCEPT_PHOTO = 6
 
 
-class Role(Enum):
+class Role(IntFlag):
     SUPER_ADMIN = 0
     ADMIN = 1
     MANAGER = 2

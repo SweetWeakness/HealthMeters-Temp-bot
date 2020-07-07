@@ -34,11 +34,11 @@ def get_manager_keyboard():
     keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
 
     # button1 = telebot.types.KeyboardButton(text=localization.stat_employee)
-    button2 = telebot.types.KeyboardButton(text=localization.list_attach_employee)
+    # button2 = telebot.types.KeyboardButton(text=localization.list_attach_employee)
     button3 = telebot.types.KeyboardButton(text=localization.common_stat)
     button4 = telebot.types.KeyboardButton(text=localization.ask_temp)
 
-    keyboard.add(button4, button3, button2)
+    keyboard.add(button4, button3)
 
     return keyboard
 
@@ -65,7 +65,7 @@ def get_role_choose_keyboard():
     return keyboard
 
 
-def get_accept_temp_keyboard():
+def get_accept_keyboard():
     keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
 
     button1 = telebot.types.KeyboardButton(text="Все верно")
