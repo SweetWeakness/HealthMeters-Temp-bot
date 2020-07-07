@@ -21,8 +21,13 @@ def pretty_date(ugly_date) -> str:
     return '{}.{}.{} {}:{}'.format(date.tm_mday, date.tm_mon, date.tm_year, date.tm_hour, date.tm_min)
 
 
-def temp_validation(temp) -> bool:
-    return not re.match(r'^-?\d+(?:\.\d+)?$', temp) is None
+def temp_validation(temp: str) -> bool:
+    try:
+        temp = temp.replace(',', '.')
+        float(temp)
+        return True
+    except:
+        return False
 
 
 # Todo Посмотреть отладкой тип у message и добавить
