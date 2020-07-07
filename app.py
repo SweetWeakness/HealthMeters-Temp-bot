@@ -16,41 +16,55 @@ bot = telebot.TeleBot(TOKEN)
 server = Flask(__name__)
 
 
-def pretty_date(ugly_date):
-    date = time.strptime(ugly_date, "%Y-%m-%dT%H:%M:%S.%fZ")
-    return "{}.{}.{} {}:{}".format(date.tm_mday, date.tm_mon, date.tm_year, date.tm_hour, date.tm_min)
+
+def pretty_date(ugly_date) -> str:
+    date = time.strptime(ugly_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+    return '{}.{}.{} {}:{}'.format(date.tm_mday, date.tm_mon, date.tm_year, date.tm_hour, date.tm_min)
 
 
-def temp_validation(temp):
-    return not re.match(r"^-?\d+(?:\.\d+)?$", temp) is None
+def temp_validation(temp: str) -> bool:
+    try:
+        temp = temp.replace(',', '.')
+        float(temp)
+        return True
+    except:
+        return False
 
 
-@bot.message_handler(commands=["start"])
-def start(message):
+# Todo Посмотреть отладкой тип у message и добавить
+def set_start_screen(uid: int, role: str, message) -> None:
+    if role == "worker":
+        role = st.Role.WORKER
+        stage = st.WorkerStage.GET_TEMP
+        keyboard = keyboards.get_employee_keyboard()
+    elif role == "manager":
+        role = st.Role.MANAGER
+        stage = st.WorkerStage.GET_INFO
+        keyboard = keyboards.get_manager_keyboard()
+    else:
+        bot.reply_to(message, 'У вас нет доступа. Обратитесь к администратору.')
+        return
+
+    new_session.set_role(uid, role)
+    new_session.set_role_stage(uid, role, stage)
+
+    bot.reply_to(message, 'Здравствуйте!', reply_markup=keyboard)
+
+
+@bot.message_handler(commands=['start'])
+def start(message) -> None:
+    # Todo не забыть убрать
     uid = message.from_user.id
 
-    role = "no access"
     companies = ar.get_companies_list(uid)
 
     if len(companies) != 0:
+        # Todo Изменить на выбор из вариантов
         role = ar.get_role(uid, companies[0])
-        if role == "worker":
-            role = "Role.WORKER"
-            new_session.set_role(uid, st.Role.WORKER)
-            new_session.set_role_stage(uid, st.Role.WORKER, st.WorkerStage.GET_TEMP)
-        elif role == "manager":
-            role = "Role.MANAGER"
-            new_session.set_role(uid, st.Role.MANAGER)
-            new_session.set_role_stage(uid, st.Role.MANAGER, st.ManagerStage.GET_INFO)
+        set_start_screen(uid, role, message)
 
-    if role == "Role.WORKER":
-        new_session.set_role_stage(uid, st.Role.WORKER, st.WorkerStage.GET_TEMP)
-        bot.reply_to(message, "Здравствуйте!", reply_markup=keyboards.get_employee_keyboard())
-    elif role == "Role.MANAGER":
-        new_session.set_role_stage(uid, st.Role.MANAGER, st.ManagerStage.GET_INFO)
-        bot.reply_to(message, "Здравствуйте!", reply_markup=keyboards.get_manager_keyboard())
     else:
-        bot.reply_to(message, "У вас нет доступа. Обратитесь к администратору.")
+        bot.reply_to(message, 'Вас нет в системе. Обратитесь к администратору.')
 
 
 @bot.message_handler(content_types=["text"])
