@@ -30,11 +30,11 @@ def set_start_screen(uid: int, role: str, message) -> None:
     if role == "worker":
         role = st.Role.WORKER
         stage = st.WorkerStage.GET_TEMP
-        keyboard = keyboards.get_employee_keyboard();
+        keyboard = keyboards.get_employee_keyboard()
     elif role == "manager":
         role = st.Role.MANAGER
         stage = st.WorkerStage.GET_INFO
-        keyboard = keyboards.get_manager_keyboard();
+        keyboard = keyboards.get_manager_keyboard()
     else:
         bot.reply_to(message, 'У вас нет доступа. Обратитесь к администратору.')
         return
