@@ -17,6 +17,7 @@ def get_admin_keyboard():
 
     return keyboard
 
+
 def get_main_admin_keyboard():
     keyboard = get_admin_keyboard()
 
@@ -25,6 +26,7 @@ def get_main_admin_keyboard():
     keyboard.add(button)
 
     return keyboard
+
 
 def get_manager_keyboard():
     keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
@@ -38,6 +40,7 @@ def get_manager_keyboard():
 
     return keyboard
 
+
 def get_employee_keyboard():
     keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
 
@@ -46,6 +49,7 @@ def get_employee_keyboard():
     keyboard.add(button)
 
     return keyboard
+
 
 def get_role_choose_keyboard():
     keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
@@ -57,3 +61,19 @@ def get_role_choose_keyboard():
     keyboard.add(button1, button2, button3)
 
     return keyboard
+
+
+###################################
+def get_accept_temp_keyboard():
+    keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+
+    button1 = telebot.types.KeyboardButton(text="Все верно")
+    button2 = telebot.types.KeyboardButton(text="Ошибка, щас исправлю")
+
+    keyboard.add(button1, button2)
+
+    return keyboard
+
+
+def get_empty_keyboard():
+    return telebot.types.ReplyKeyboardRemove()

@@ -1,35 +1,49 @@
 import requests
 
 
-server_url = 'http://151.248.122.100:8000'
+server_url = 'http://127.0.0.1:8000/telegram_bot'
 
-def user_have_access(uid):
-    res = requests.post(server_url + '/position/', data={
-        'telegram_id': str(uid)
+
+def get_companies_list(uid):
+    res = requests.post(server_url + "/companies", data={
+        "telegram_id": str(uid),
     })
     res_json = res.json()
-    try:
-        return res_json['position']
-    except:
-        return ''
+    return res_json["companies"]
 
-def get_manager_list(uid):
-    res = requests.post(server_url + '/list/', data={
-        "type": "manage_list",
-        "telegram_id": str(uid)
+
+def get_role(uid, guid):
+    res = requests.post(server_url + "/role", data={
+        "telegram_id": str(uid),
+        "company": str(guid)
     })
     res_json = res.json()
-    return res_json
+    return res_json['role']
 
-def get_manager_stat(uid):
-    res = requests.post(server_url + '/statistic/', data={
-        "type": "manage_statistics",
-        "telegram_id": str(uid)
-    })
-    return res.json()
 
-def add_worker_temp(uid, temp):
-    res = requests.post(server_url + '/user/', data={
-        "telegram_id": uid,
-        "temperature": str(temp)
+def get_attached_workers(uid, guid):
+    res = requests.post(server_url + "/attached_workers", data={
+        "telegram_id": str(uid),
+        "company": str(guid)
     })
+    res_json = res.json()
+    return res_json["users"]
+
+
+def get_workers_stats(uid, guid):
+    res = requests.post(server_url + "/attached_workers_statistics", data={
+        "telegram_id": str(uid),
+        "company": str(guid)
+    })
+    res_json = res.json()
+    return res_json["users"]
+
+
+def add_health_data(uid, guid, temp):
+    res = requests.post(server_url + "/add_health_data", data={
+        "telegram_id": str(uid),
+        "company": str(guid),
+        "temperature": temp
+    })
+    res_json = res.json()
+    return res_json["status"]
