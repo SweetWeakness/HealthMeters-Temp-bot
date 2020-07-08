@@ -1,7 +1,11 @@
 import requests
+import configparser
 
-# Todo вынести в конфиг файл
-server_url = 'http://127.0.0.1:8000/telegram_bot'
+
+config = configparser.ConfigParser()
+config.read("config.ini")
+
+server_url = config["debug"]["server_url"]
 
 
 def get_companies_list(uid: int) -> list:
@@ -18,7 +22,7 @@ def get_role(uid: int, company_guid: str) -> str:
         "company": company_guid
     })
     res_json = res.json()
-    return res_json['role']
+    return res_json["role"]
 
 
 def get_attached_workers(uid: int, company_guid: str) -> list:

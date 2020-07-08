@@ -15,13 +15,13 @@ class UserInfo:
 
 
 def pretty_date(ugly_date) -> str:
-    date = time.strptime(ugly_date, '%Y-%m-%dT%H:%M:%S.%fZ')
-    return '{}.{}.{} {}:{}'.format(date.tm_mday, date.tm_mon, date.tm_year, date.tm_hour, date.tm_min)
+    date = time.strptime(ugly_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+    return "{}.{}.{} {}:{}".format(date.tm_mday, date.tm_mon, date.tm_year, date.tm_hour, date.tm_min)
 
 
 def temp_validation(temp: str) -> bool:
     try:
-        temp = temp.replace(',', '.')
+        temp = temp.replace(",", ".")
         float(temp)
         return True
     except:
@@ -38,13 +38,13 @@ def set_start_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
         stage = st.ManagerStage.GET_INFO
         keyboard = keyboards.get_manager_keyboard()
     else:
-        bot.reply_to(user.message, 'У вас нет доступа. Обратитесь к администратору.')
+        bot.reply_to(user.message, "У вас нет доступа. Обратитесь к администратору.")
         return
 
     users_db.set_role(user.uid, new_role)
     users_db.set_role_stage(user.uid, new_role, stage)
 
-    bot.reply_to(user.message, 'Здравствуйте!', reply_markup=keyboard)
+    bot.reply_to(user.message, "Здравствуйте!", reply_markup=keyboard)
 
 
 def set_accept_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
@@ -86,7 +86,6 @@ def set_accept_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
 
 
 def set_validation_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    print(type(users_db))
     if temp_validation(user.message.text):
         temp = float(user.message.text)
         if 35.0 < temp < 41.0:

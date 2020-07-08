@@ -13,7 +13,6 @@ config.read("config.ini")
 
 TOKEN = config["bot"]["token"]
 webhook_url = config["debug"]["webhook_url"] + "/" + TOKEN
-print(webhook_url)
 
 bot = telebot.TeleBot(TOKEN)
 
