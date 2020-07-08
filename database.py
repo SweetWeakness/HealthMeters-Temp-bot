@@ -1,25 +1,28 @@
 import redis
 
 
-def connect():
-    return redis.Redis(host='', port='', df='', password='')
+class SessionsStorage:
+    uid_role: redis.Redis
+    uid_data: redis.Redis
 
-def get_stage(uid):
-    r = connect()
+    def __init__(self):
+        self.uid_role = redis.Redis(host="127.0.0.1", port=6379, db=0, decode_responses=True)
+        self.uid_data = redis.Redis(host="127.0.0.1", port=6379, db=1, decode_responses=True)
 
-    return r.get(str(uid))
+    def get_role(self, uid: int) -> str:
+        return self.uid_role.get(str(uid))
 
-def set_stage(uid, stage):
-    r = connect()
+    def set_role(self, uid: int, role: str) -> None:
+        self.uid_role.set(str(uid), str(role))
 
-    r.set(str(uid), str(stage))
+    def set_role_stage(self, uid: int, role: str, stage: str) -> None:
+        self.uid_role.set(str(uid) + "_" + str(role), str(stage))
 
-def set_stage_data(uid, stage, data):
-    r = connect()
+    def get_role_stage(self, uid: int, role: str) -> str:
+        return self.uid_role.get(str(uid) + "_" + str(role))
 
-    r.set(str(uid) + '_' + str(stage), str(data))
+    def get_data(self, uid: int) -> str:
+        return self.uid_data.get(str(uid))
 
-def get_stage_data(uid, stage)
-    r = connect()
-
-    return r.get(str(uid) + '_' + str(stage))
+    def set_data(self, uid: int, data: str) -> None:
+        self.uid_data.set(str(uid), str(data))

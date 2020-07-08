@@ -1,35 +1,53 @@
 import requests
+import configparser
 
 
-server_url = 'http://151.248.122.100:8000'
+config = configparser.ConfigParser()
+config.read("config.ini")
 
-def user_have_access(uid):
-    res = requests.post(server_url + '/position/', data={
-        'telegram_id': str(uid)
-    })
-    res_json = res.json()
-    try:
-        return res_json['position']
-    except:
-        return ''
+server_url = config["debug"]["server_url"]
 
-def get_manager_list(uid):
-    res = requests.post(server_url + '/list/', data={
-        "type": "manage_list",
-        "telegram_id": str(uid)
-    })
-    res_json = res.json()
-    return res_json
 
-def get_manager_stat(uid):
-    res = requests.post(server_url + '/statistic/', data={
-        "type": "manage_statistics",
-        "telegram_id": str(uid)
-    })
-    return res.json()
-
-def add_worker_temp(uid, temp):
-    res = requests.post(server_url + '/user/', data={
+def get_companies_list(uid: int) -> list:
+    res = requests.post(server_url + "/companies", data={
         "telegram_id": uid,
-        "temperature": str(temp)
     })
+    res_json = res.json()
+    return res_json["companies"]
+
+
+def get_role(uid: int, company_guid: str) -> str:
+    res = requests.post(server_url + "/role", data={
+        "telegram_id": uid,
+        "company": company_guid
+    })
+    res_json = res.json()
+    return res_json["role"]
+
+
+def get_attached_workers(uid: int, company_guid: str) -> list:
+    res = requests.post(server_url + "/attached_workers", data={
+        "telegram_id": uid,
+        "company": company_guid
+    })
+    res_json = res.json()
+    return res_json["users"]
+
+
+def get_workers_stats(uid: int, company_guid: str) -> list:
+    res = requests.post(server_url + "/attached_workers_statistics", data={
+        "telegram_id": uid,
+        "company": company_guid
+    })
+    res_json = res.json()
+    return res_json["users"]
+
+
+def add_health_data(uid: int, company_guid: str, temp: float) -> dict():
+    res = requests.post(server_url + "/add_health_data", data={
+        "telegram_id": uid,
+        "company": company_guid,
+        "temperature": temp
+    })
+    res_json = res.json()
+    return res_json["status"]
