@@ -11,28 +11,31 @@ import screens as sc
 config = configparser.ConfigParser()
 config.read("config.ini")
 
-TOKEN = config["bot"]["token"]
-webhook_url = config["debug"]["webhook_url"] + "/" + TOKEN
+TOKEN = config["release"]["token"]
+webhook_url = config["release"]["webhook_url"] + "/" + TOKEN
 
 bot = telebot.TeleBot(TOKEN)
 
 server = Flask(__name__)
 
 
-@bot.message_handler(commands=['start'])
+@bot.message_handler(commands=["start"])
 def start(message: telebot.types.Message) -> None:
     uid = message.from_user.id
 
     companies = ar.get_companies_list(uid)
 
     if len(companies) == 1:
-        # Todo Изменить на выбор из вариантов
         role = ar.get_role(uid, companies[0])
         user_info = sc.UserInfo(uid, role, message)
         sc.set_start_screen(bot, new_session, user_info)
 
+    elif len(companies) > 1:
+        # Todo Изменить на выбор из вариантов
+        print("we are implementing this")
+
     else:
-        bot.reply_to(message, 'Вас нет в системе. Обратитесь к администратору.')
+        bot.reply_to(message, "Вас нет в системе. Обратитесь к администратору.")
 
 
 @bot.message_handler(content_types=["text"])
