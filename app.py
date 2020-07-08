@@ -1,150 +1,67 @@
 import os
 import telebot
-import re
-import time
 from flask import Flask, request
+import configparser
 
-import stages as st
 import database as db
 import api_requests as ar
-import keyboards
+import screens as sc
 
-# Todo: вынести из кода
-TOKEN = "1245516512:AAFAPDaDe2DwPgqTZxy4eanjSpLd5VigsUg"
+
+config = configparser.ConfigParser()
+config.read("config.ini")
+
+TOKEN = config["bot"]["token"]
+webhook_url = config["debug"]["webhook_url"] + "/" + TOKEN
+print(webhook_url)
+
 bot = telebot.TeleBot(TOKEN)
 
 server = Flask(__name__)
 
 
-
-def pretty_date(ugly_date) -> str:
-    date = time.strptime(ugly_date, '%Y-%m-%dT%H:%M:%S.%fZ')
-    return '{}.{}.{} {}:{}'.format(date.tm_mday, date.tm_mon, date.tm_year, date.tm_hour, date.tm_min)
-
-
-def temp_validation(temp: str) -> bool:
-    try:
-        temp = temp.replace(',', '.')
-        float(temp)
-        return True
-    except:
-        return False
-
-
-# Todo Посмотреть отладкой тип у message и добавить
-def set_start_screen(uid: int, role: str, message) -> None:
-    if role == "worker":
-        role = st.Role.WORKER
-        stage = st.WorkerStage.GET_TEMP
-        keyboard = keyboards.get_employee_keyboard()
-    elif role == "manager":
-        role = st.Role.MANAGER
-        stage = st.WorkerStage.GET_INFO
-        keyboard = keyboards.get_manager_keyboard()
-    else:
-        bot.reply_to(message, 'У вас нет доступа. Обратитесь к администратору.')
-        return
-
-    new_session.set_role(uid, role)
-    new_session.set_role_stage(uid, role, stage)
-
-    bot.reply_to(message, 'Здравствуйте!', reply_markup=keyboard)
-
-
 @bot.message_handler(commands=['start'])
-def start(message) -> None:
-    # Todo не забыть убрать
+def start(message: telebot.types.Message) -> None:
     uid = message.from_user.id
 
     companies = ar.get_companies_list(uid)
 
-    if len(companies) != 0:
+    if len(companies) == 1:
         # Todo Изменить на выбор из вариантов
         role = ar.get_role(uid, companies[0])
-        set_start_screen(uid, role, message)
+        user_info = sc.UserInfo(uid, role, message)
+        sc.set_start_screen(bot, new_session, user_info)
 
     else:
         bot.reply_to(message, 'Вас нет в системе. Обратитесь к администратору.')
 
 
 @bot.message_handler(content_types=["text"])
-def text_handler(message):
-    # ToDo: изменить на проде
+def text_handler(message: telebot.types.Message):
     uid = message.from_user.id
-
     role = new_session.get_role(uid)
     stage = new_session.get_role_stage(uid, role)
+
+    user_info = sc.UserInfo(uid, role, message)
     # print(role)
     # print(stage)
 
     if role == "Role.WORKER":
-
         if stage == "WorkerStage.GET_TEMP":
-            if message.text == "Измерить температуру":
-                new_session.set_role_stage(uid, st.Role.WORKER, st.WorkerStage.VALIDATION_TEMP)
-                bot.reply_to(message, "Введите вашу температуру (например, 36.6):",
-                             reply_markup=keyboards.get_empty_keyboard())
+            sc.set_getting_temp_screen(bot, new_session, user_info)
 
         elif stage == "WorkerStage.VALIDATION_TEMP":
-            if temp_validation(message.text):
-                temp = float(message.text)
-                if 35.0 < temp < 41.0:
-                    new_session.set_role_stage(uid, st.Role.WORKER, st.WorkerStage.ACCEPT_TEMP)
-                    bot.reply_to(message, "Ваша температура {}, все верно?".format(temp),
-                                 reply_markup=keyboards.get_accept_keyboard())
-                    new_session.set_data(uid, temp)
-                else:
-                    bot.reply_to(message, "Неправильный ввод, вы не человек, введите еще раз.",
-                                 reply_markup=keyboards.get_empty_keyboard())
-            else:
-                bot.reply_to(message, "Неправильный ввод, мб нормально введете? Введите еще раз.",
-                             reply_markup=keyboards.get_empty_keyboard())
+            sc.set_validation_temp_screen(bot, new_session, user_info)
 
         elif stage == "WorkerStage.ACCEPT_TEMP":
-            if message.text == "Ошибка, щас исправлю":
-                new_session.set_role_stage(uid, st.Role.WORKER, st.WorkerStage.VALIDATION_TEMP)
-                bot.reply_to(message, "Хорошо, введите вашу температуру еще раз:",
-                             reply_markup=keyboards.get_empty_keyboard())
-
-            elif message.text == "Все верно":
-                new_session.set_role_stage(uid, st.Role.WORKER, st.WorkerStage.GET_PHOTO)
-                bot.reply_to(message, "Отлично, жду фотку", reply_markup=keyboards.get_empty_keyboard())
+            sc.set_accept_temp_screen(bot, new_session, user_info)
 
         elif stage == "WorkerStage.ACCEPT_PHOTO":
-            if message.text == "Ошибка, щас исправлю":
-                new_session.set_role_stage(uid, st.Role.WORKER, st.WorkerStage.GET_PHOTO)
-                bot.reply_to(message, "Хорошо, отправьте фото еще раз:",
-                             reply_markup=keyboards.get_empty_keyboard())
-
-            elif message.text == "Все верно":
-                new_session.set_role_stage(uid, st.Role.WORKER, st.WorkerStage.GET_TEMP)
-                bot.reply_to(message, "Спасибо за фотку)", reply_markup=keyboards.get_employee_keyboard())
-                companies = ar.get_companies_list(uid)
-                ar.add_health_data(uid, companies[0], new_session.get_data(uid))
+            sc.set_accept_photo_screen(bot, new_session, user_info)
 
     elif role == "Role.MANAGER":
-
         if stage == "ManagerStage.GET_INFO":
-            if message.text == "Вывести общую статистику":
-                guid = ar.get_companies_list(uid)[0]
-                e_stat = ar.get_workers_stats(uid, guid)
-                ans = ""
-                for measure in e_stat:
-                    p_date = ""
-                    if "date" in measure:
-                        p_date = pretty_date(measure["date"])
-                    temp = "-"
-                    if not re.match(r"^-?\d+(?:\.\d+)?$", str(measure["last_temp"])) is None:
-                        temp = str(measure["last_temp"])
-                    ans += "_" + measure["initials"] + "_ *" + temp + "* " + p_date + "\n"
-                bot.reply_to(message, ans, reply_markup=keyboards.get_manager_keyboard(), parse_mode="markdown")
-
-            elif message.text == "Запросить измерения температуры":
-                guid = ar.get_companies_list(uid)[0]
-                e_list = ar.get_attached_workers(uid, guid)
-                for u in e_list:
-                    print(u["telegram_id"])
-                    bot.send_message(u["telegram_id"], "Ваш менеджер просит измерить температуру!")
+            sc.set_stat_screen(bot, user_info)
 
     else:
         bot.reply_to(message, "Мб зарегаетесь для начала!")
@@ -152,23 +69,21 @@ def text_handler(message):
 
 @bot.message_handler(content_types=["photo"])
 def photo_handler(message):
-    role = new_session.get_role(message.from_user.id)
+    uid = message.from_user.id
+    role = new_session.get_role(uid)
+    stage = new_session.get_role_stage(uid, role)
+
+    user_info = sc.UserInfo(uid, role, message)
 
     if role == "Role.WORKER":
-        new_session.set_role_stage(message.from_user.id, st.Role.WORKER, st.WorkerStage.ACCEPT_PHOTO)
-        bot.reply_to(message, "Фотку получил", reply_markup=keyboards.get_accept_keyboard())
+        if stage == "WorkerStage.GET_PHOTO":
+            sc.set_getting_photo_screen(bot, new_session, user_info)
 
 
 @server.route("/" + TOKEN, methods=["POST"])
 def get_message():
     bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
     return "!", 200
-
-
-webhook_url = "https://fbf62db271a4.ngrok.io" + "/" + TOKEN
-
-
-# webhook_url = "https://health-meters-bot.herokuapp.com/" + TOKEN
 
 
 @server.route("/")

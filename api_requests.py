@@ -30,7 +30,7 @@ def get_attached_workers(uid: int, company_guid: str) -> list:
     return res_json["users"]
 
 
-def get_workers_stats(uid: int, company_guid: str)-> list:
+def get_workers_stats(uid: int, company_guid: str) -> list:
     res = requests.post(server_url + "/attached_workers_statistics", data={
         "telegram_id": uid,
         "company": company_guid
@@ -39,7 +39,7 @@ def get_workers_stats(uid: int, company_guid: str)-> list:
     return res_json["users"]
 
 
-def add_health_data(uid: int, company_guid: str, temp: float) -> dict[str, str]:
+def add_health_data(uid: int, company_guid: str, temp: float) -> dict():
     res = requests.post(server_url + "/add_health_data", data={
         "telegram_id": uid,
         "company": company_guid,
