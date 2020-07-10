@@ -12,7 +12,7 @@ config = configparser.ConfigParser()
 config.read("config.ini")
 
 TOKEN = config["release"]["token"]
-webhook_url = config["release"]["webhook_url"] + "/" + TOKEN
+webhook_url = config["debug"]["webhook_url"] + "/" + TOKEN
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -25,14 +25,18 @@ def start(message: telebot.types.Message) -> None:
 
     companies = ar.get_companies_list(uid)
 
-    if len(companies) == 1:
+    if len(companies) > 1:
         role = ar.get_role(uid, companies[0])
-        user_info = sc.UserInfo(uid, role, message)
+        user_info = sc.UserInfo(uid=uid, role=role, companies=[], message=message)
+
         sc.set_start_screen(bot, new_session, user_info)
 
-    elif len(companies) > 1:
+    elif len(companies) == 1:
         # Todo Изменить на выбор из вариантов
         print("we are implementing this")
+
+        user_info = sc.UserInfo(uid=uid, role="no role", companies=companies, message=message)
+        sc.set_company_list_screen(bot, new_session, user_info)
 
     else:
         bot.reply_to(message, "Вас нет в системе. Обратитесь к администратору.")
@@ -41,10 +45,11 @@ def start(message: telebot.types.Message) -> None:
 @bot.message_handler(content_types=["text"])
 def text_handler(message: telebot.types.Message):
     uid = message.from_user.id
-    role = new_session.get_role(uid)
-    stage = new_session.get_role_stage(uid, role)
 
-    user_info = sc.UserInfo(uid, role, message)
+    role = new_session.get_role(uid)
+    stage = new_session.get_stage(uid)
+
+    user_info = sc.UserInfo(uid=uid, role=role, companies=[], message=message)
     # print(role)
     # print(stage)
 
@@ -65,6 +70,19 @@ def text_handler(message: telebot.types.Message):
         if stage == "ManagerStage.GET_INFO":
             sc.set_stat_screen(bot, user_info)
 
+    elif role == "Role.CHOOSING":
+        companies = ar.get_companies_list(uid)
+
+        if companies.index(message.text) is not None:
+            role = ar.get_role(uid, message.text)
+            user_info.set_companies(companies)
+            user_info.set_role(role)
+
+            sc.set_start_screen(bot, new_session, user_info)
+
+        else:
+            bot.reply_to(message, "Ошибка в названии компании")
+
     else:
         bot.reply_to(message, "Мб зарегаетесь для начала!")
 
@@ -73,9 +91,9 @@ def text_handler(message: telebot.types.Message):
 def photo_handler(message):
     uid = message.from_user.id
     role = new_session.get_role(uid)
-    stage = new_session.get_role_stage(uid, role)
+    stage = new_session.get_stage(uid)
 
-    user_info = sc.UserInfo(uid, role, message)
+    user_info = sc.UserInfo(uid=uid, role=role, companies=[], message=message)
 
     if role == "Role.WORKER":
         if stage == "WorkerStage.GET_PHOTO":
@@ -100,4 +118,4 @@ def webhook():
 if __name__ == "__main__":
     print(bot.get_webhook_info())
     new_session = db.SessionsStorage()
-    server.run(host="127.0.0.1", port=int(os.environ.get("PORT", 80)))
+    server.run(host="127.0.0.1", port=int(os.environ.get("PORT", 5000)))

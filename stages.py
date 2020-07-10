@@ -21,3 +21,4 @@ class Role(IntFlag):
     ADMIN = 1
     MANAGER = 2
     WORKER = 3
+    CHOOSING = 4

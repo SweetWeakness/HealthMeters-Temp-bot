@@ -8,10 +8,17 @@ import api_requests as ar
 
 
 class UserInfo:
-    def __init__(self, uid: int, role: str, message: telebot.types.Message):
+    def __init__(self, uid: int, role: str, companies: list, message: telebot.types.Message):
         self.uid = uid
-        self.role = role
         self.message = message
+        self.companies = companies
+        self.role = role
+
+    def set_companies(self, companies):
+        self.companies = companies
+
+    def set_role(self, role):
+        self.role = role
 
 
 def pretty_date(ugly_date) -> str:
@@ -76,6 +83,7 @@ def set_accept_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
         keyboard = keyboards.get_employee_keyboard()
 
         companies = ar.get_companies_list(user.uid)
+        # Todo Изменить на выбор из компаний с проверкой количества компаний
         ar.add_health_data(user.uid, companies[0], users_db.get_data(user.uid))
     else:
         return
@@ -144,3 +152,8 @@ def set_getting_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
 def set_getting_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     users_db.set_role_stage(user.message.from_user.id, st.Role.WORKER, st.WorkerStage.ACCEPT_PHOTO)
     bot.reply_to(user.message, "Фотку получил", reply_markup=keyboards.get_accept_keyboard())
+
+
+def set_company_list_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+    users_db.set_role(user.uid, st.Role.CHOOSING)
+    bot.reply_to(user.message, "Здравствуйте! Выберите компанию:", reply_markup=keyboards.get_companies_keyboard(user.companies))
