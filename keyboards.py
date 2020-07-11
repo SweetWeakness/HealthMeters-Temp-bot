@@ -87,4 +87,6 @@ def get_companies_keyboard(comp_list: list):
         button = telebot.types.KeyboardButton(text=comp)
         keyboard.add(button)
 
+    keyboard.add(telebot.types.KeyboardButton(text="Выбрать все"))
+
     return keyboard
