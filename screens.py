@@ -28,7 +28,6 @@ def pretty_date(ugly_date) -> str:
 
 def temp_validation(temp: str) -> bool:
     try:
-        temp = temp.replace(",", ".")
         float(temp)
         return True
     except:
@@ -108,8 +107,9 @@ def set_accept_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
 
 
 def set_validation_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    if temp_validation(user.message.text):
-        temp = float(user.message.text)
+    temp = user.message.text.replace(",", ".")
+    if temp_validation(temp):
+        temp = float(temp)
         if 35.0 < temp < 41.0:
             users_db.set_stage(user.uid, st.WorkerStage.ACCEPT_TEMP)
             users_db.set_data(user.uid, temp)
@@ -134,6 +134,7 @@ def get_temp_stats(workers_list: list) -> str:
         if "date" in measure:
             p_date = pretty_date(measure["date"])
         temp = "-"
+        # Todo Убрать регулярку
         if not re.match(r"^-?\d+(?:\.\d+)?$", str(measure["last_temp"])) is None:
             temp = str(measure["last_temp"])
         ans += "_" + measure["initials"] + "_ *" + temp + "* " + p_date + "\n"
