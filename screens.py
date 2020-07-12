@@ -40,10 +40,12 @@ def set_start_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
         new_role = st.Role.WORKER
         stage = st.WorkerStage.GET_TEMP
         keyboard = keyboards.get_employee_keyboard()
+
     elif user.role == "manager":
         new_role = st.Role.MANAGER
-        stage = st.ManagerStage.GET_INFO
+        stage = st.ManagerStage.CHOOSING_OPTION
         keyboard = keyboards.get_manager_keyboard()
+
     else:
         bot.reply_to(user.message, "У вас нет доступа. Обратитесь к администратору.")
         return
@@ -110,9 +112,10 @@ def set_validation_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
         temp = float(user.message.text)
         if 35.0 < temp < 41.0:
             users_db.set_stage(user.uid, st.WorkerStage.ACCEPT_TEMP)
+            users_db.set_data(user.uid, temp)
+
             reply_mes = "Ваша температура {}, все верно?".format(temp)
             keyboard = keyboards.get_accept_keyboard()
-            users_db.set_data(user.uid, temp)
         else:
             reply_mes = "Неправильный ввод, вы не человек, введите еще раз."
             keyboard = keyboards.get_empty_keyboard()
@@ -138,21 +141,55 @@ def get_temp_stats(workers_list: list) -> str:
     return ans
 
 
-def set_stat_screen(bot: telebot.TeleBot, user: UserInfo) -> None:
+def set_choosing_option_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if user.message.text == "Вывести общую статистику":
-        company_guid = ar.get_companies_list(user.uid)[0]
-        workers_list = ar.get_workers_stats(user.uid, company_guid)
+        companies = ar.get_companies_list(user.uid)
 
-        temp_stats = get_temp_stats(workers_list)
+        if len(companies) == 1:
+            bot.reply_to(user.message, "Вывожу общую статистику")
 
-        bot.reply_to(user.message, temp_stats, reply_markup=keyboards.get_manager_keyboard(), parse_mode="markdown")
+            workers_list = ar.get_workers_stats(user.uid, companies[0])
+            temp_stats = get_temp_stats(workers_list)
+
+            bot.send_message(user.uid, temp_stats, parse_mode="markdown")
+            return
+
+        elif len(companies) > 1:
+            users_db.set_stage(user.uid, st.ManagerStage.GET_INFO)
+            reply_mes = "Выберите компанию, по которой нужна статистика:"
+            keyboard = keyboards.get_companies_keyboard(companies)
+
+        else:
+            users_db.set_role(user.uid, st.Role.NOBODY)
+            reply_mes = "У вас нет доступа. Обратитесь к администратору."
+            keyboard = None
 
     elif user.message.text == "Запросить измерения температуры":
-        company_guid = ar.get_companies_list(user.uid)[0]
-        workers_list = ar.get_attached_workers(user.uid, company_guid)
+        companies = ar.get_companies_list(user.uid)
 
-        for worker in workers_list:
-            bot.send_message(worker["telegram_id"], "Ваш менеджер просит измерить температуру!")
+        if len(companies) == 1:
+            bot.reply_to(user.message, "Запросил измерения температуры")
+
+            workers_list = ar.get_workers_stats(user.uid, companies[0])
+            for worker in workers_list:
+                bot.send_message(worker["telegram_id"], "Ваш менеджер просит измерить температуру!")
+            return
+
+        elif len(companies) > 1:
+            users_db.set_stage(user.uid, st.ManagerStage.ASK_TEMP)
+            reply_mes = "Выберите компанию, в которой надо првоести замеры:"
+            keyboard = keyboards.get_companies_keyboard(companies)
+
+        else:
+            users_db.set_role(user.uid, st.Role.NOBODY)
+            reply_mes = "У вас нет доступа. Обратитесь к администратору."
+            keyboard = None
+
+    else:
+        reply_mes = "Извините, я вас не понял"
+        keyboard = None
+
+    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
 
 
 def set_getting_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
@@ -162,7 +199,8 @@ def set_getting_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
         keyboard = keyboards.get_empty_keyboard()
 
     else:
-        return
+        reply_mes = "Извините, я вас не понял"
+        keyboard = None
 
     bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
 
@@ -193,6 +231,45 @@ def set_worker_send_screen(bot: telebot.TeleBot, users_db, user: UserInfo):
 
         for company_guid in user.companies:
             ar.add_health_data(user.uid, company_guid, users_db.get_data(user.uid))
+
+    else:
+        reply_mes = "Ошибка, такой компании нет. Выберите компанию:"
+        keyboard = None
+
+    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+
+
+def set_manager_info_screen(bot: telebot.TeleBot, users_db, user: UserInfo):
+    if len(user.companies) > 0:
+        users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
+        reply_mes = "Вывел общую статистику"
+        keyboard = keyboards.get_manager_keyboard()
+
+        temp_stats = ""
+
+        for company_guid in user.companies:
+            workers_list = ar.get_workers_stats(user.uid, company_guid)
+            temp_stats += get_temp_stats(workers_list)
+
+        bot.send_message(user.uid, temp_stats)
+
+    else:
+        reply_mes = "Ошибка, такой компании нет. Выберите компанию:"
+        keyboard = None
+
+    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+
+
+def set_manager_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo):
+    if len(user.companies) > 0:
+        users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
+        reply_mes = "Отправил уведомление сотрудникам"
+        keyboard = keyboards.get_manager_keyboard()
+
+        for company_guid in user.companies:
+            workers_list = ar.get_attached_workers(user.uid, company_guid)
+            for worker in workers_list:
+                bot.send_message(worker["telegram_id"], "Ваш менеджер просит измерить температуру!")
 
     else:
         reply_mes = "Ошибка, такой компании нет. Выберите компанию:"

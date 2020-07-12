@@ -6,6 +6,8 @@ ONE = 1
 
 class ManagerStage(IntFlag):
     CHOOSING_OPTION = 1
+    GET_INFO = 2
+    ASK_TEMP = 3
 
 
 class WorkerStage(IntFlag):

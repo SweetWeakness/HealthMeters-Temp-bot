@@ -67,7 +67,19 @@ def text_handler(message: telebot.types.Message):
 
     elif role == "Role.MANAGER":
         if stage == "ManagerStage.CHOOSING_OPTION":
-            sc.set_stat_screen(bot, new_session, user_info)
+            sc.set_choosing_option_screen(bot, new_session, user_info)
+
+        elif stage == "ManagerStage.GET_INFO":
+            receiving_companies = sc.get_choosed_company(user_info)
+            user_info.set_companies(receiving_companies)
+
+            sc.set_manager_info_screen(bot, new_session, user_info)
+
+        elif stage == "ManagerStage.ASK_TEMP":
+            receiving_companies = sc.get_choosed_company(user_info)
+            user_info.set_companies(receiving_companies)
+
+            sc.set_manager_temp_screen(bot, new_session, user_info)
 
     else:
         bot.reply_to(message, "Мб зарегаетесь для начала!")
