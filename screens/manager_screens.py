@@ -1,7 +1,7 @@
 import telebot
 import re
 import time
-
+from datetime import datetime
 
 import keyboards
 import stages as st
@@ -15,7 +15,7 @@ def pretty_date(ugly_date) -> str:
 
 
 def get_temp_stats(workers_list: list) -> str:
-    ans = "Запрашиваемая статистика:\n"
+    ans = ""
 
     for measure in workers_list:
         p_date = ""
@@ -30,14 +30,15 @@ def get_temp_stats(workers_list: list) -> str:
     return ans
 
 
-def manager_stats_handler(bot: telebot.TeleBot, users_db, user: UserInfo):
+def manager_stats_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     companies = ar.get_companies_list(user.uid)
 
     if len(companies) == 1:
         bot.reply_to(user.message, "Вывожу общую статистику")
 
         workers_list = ar.get_workers_stats(user.uid, companies[0])
-        temp_stats = get_temp_stats(workers_list)
+        date_mes = "Статистика была создана автоматически " + datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        temp_stats = get_temp_stats(workers_list) + "\n\n" + date_mes
 
         bot.send_message(user.uid, temp_stats, parse_mode="markdown")
         return
@@ -55,7 +56,7 @@ def manager_stats_handler(bot: telebot.TeleBot, users_db, user: UserInfo):
     bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
 
 
-def manager_temp_handler(bot: telebot.TeleBot, users_db, user: UserInfo):
+def manager_temp_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     companies = ar.get_companies_list(user.uid)
 
     if len(companies) == 1:
@@ -90,7 +91,7 @@ def set_choosing_option_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
         bot.reply_to(user.message, "Извините, я вас не понял")
 
 
-def set_manager_info_screen(bot: telebot.TeleBot, users_db, user: UserInfo):
+def set_manager_info_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if len(user.companies) > 0:
         users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
         reply_mes = "Вывел общую статистику"
@@ -103,7 +104,10 @@ def set_manager_info_screen(bot: telebot.TeleBot, users_db, user: UserInfo):
             print(workers_list)
             temp_stats += get_temp_stats(workers_list)
 
-        bot.send_message(user.uid, temp_stats)
+        date_mes = "Статистика была создана автоматически " + datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        temp_stats += "\n\n" + date_mes
+
+        bot.send_message(user.uid, temp_stats + " ")
 
     else:
         reply_mes = "Ошибка, такой компании нет. Выберите компанию:"
@@ -112,7 +116,7 @@ def set_manager_info_screen(bot: telebot.TeleBot, users_db, user: UserInfo):
     bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
 
 
-def set_manager_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo):
+def set_manager_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if len(user.companies) > 0:
         users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
         reply_mes = "Отправил уведомление сотрудникам"

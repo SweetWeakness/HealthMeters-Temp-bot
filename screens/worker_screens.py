@@ -1,6 +1,5 @@
 import telebot
 
-
 import keyboards
 import stages as st
 import api_requests as ar
@@ -104,7 +103,7 @@ def set_accept_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
     bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
 
 
-def set_worker_send_screen(bot: telebot.TeleBot, users_db, user: UserInfo):
+def set_worker_send_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if len(user.companies) > 0:
         users_db.set_stage(user.uid, st.WorkerStage.GET_TEMP)
         reply_mes = "Отправил замеры"
