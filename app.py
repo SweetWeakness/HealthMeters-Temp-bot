@@ -5,8 +5,7 @@ import configparser
 
 import database as db
 import api_requests as ar
-import screens as sc
-
+from screens import worker_screens as ws, manager_screens as ms, default_screens as ds
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -27,9 +26,9 @@ def start(message: telebot.types.Message) -> None:
 
     if len(companies) > 0:
         role = ar.get_role(uid, companies[0])
-        user_info = sc.UserInfo(uid=uid, role=role, companies=[], message=message)
+        user_info = ds.UserInfo(uid=uid, role=role, companies=[], message=message)
 
-        sc.set_start_screen(bot, new_session, user_info)
+        ds.set_start_screen(bot, new_session, user_info)
 
     else:
         bot.reply_to(message, "Вас нет в системе. Обратитесь к администратору.")
@@ -38,48 +37,45 @@ def start(message: telebot.types.Message) -> None:
 @bot.message_handler(content_types=["text"])
 def text_handler(message: telebot.types.Message):
     uid = message.from_user.id
-
     role = new_session.get_role(uid)
     stage = new_session.get_stage(uid)
 
-    user_info = sc.UserInfo(uid=uid, role=role, companies=[], message=message)
-    # print(role)
-    # print(stage)
+    user_info = ds.UserInfo(uid=uid, role=role, companies=[], message=message)
 
     if role == "Role.WORKER":
         if stage == "WorkerStage.GET_TEMP":
-            sc.set_getting_temp_screen(bot, new_session, user_info)
+            ws.set_getting_temp_screen(bot, new_session, user_info)
 
         elif stage == "WorkerStage.VALIDATION_TEMP":
-            sc.set_validation_temp_screen(bot, new_session, user_info)
+            ws.set_validation_temp_screen(bot, new_session, user_info)
 
         elif stage == "WorkerStage.ACCEPT_TEMP":
-            sc.set_accept_temp_screen(bot, new_session, user_info)
+            ws.set_accept_temp_screen(bot, new_session, user_info)
 
         elif stage == "WorkerStage.ACCEPT_PHOTO":
-            sc.set_accept_photo_screen(bot, new_session, user_info)
+            ws.set_accept_photo_screen(bot, new_session, user_info)
 
         elif stage == "WorkerStage.GET_COMPANY":
-            receiving_companies = sc.get_choosed_company(user_info)
+            receiving_companies = ds.get_choosed_company(new_session, user_info)
             user_info.set_companies(receiving_companies)
 
-            sc.set_worker_send_screen(bot, new_session, user_info)
+            ws.set_worker_send_screen(bot, new_session, user_info)
 
     elif role == "Role.MANAGER":
         if stage == "ManagerStage.CHOOSING_OPTION":
-            sc.set_choosing_option_screen(bot, new_session, user_info)
+            ms.set_choosing_option_screen(bot, new_session, user_info)
 
         elif stage == "ManagerStage.GET_INFO":
-            receiving_companies = sc.get_choosed_company(user_info)
+            receiving_companies = ds.get_choosed_company(new_session, user_info)
             user_info.set_companies(receiving_companies)
 
-            sc.set_manager_info_screen(bot, new_session, user_info)
+            ms.set_manager_info_screen(bot, new_session, user_info)
 
         elif stage == "ManagerStage.ASK_TEMP":
-            receiving_companies = sc.get_choosed_company(user_info)
+            receiving_companies = ds.get_choosed_company(new_session, user_info)
             user_info.set_companies(receiving_companies)
 
-            sc.set_manager_temp_screen(bot, new_session, user_info)
+            ms.set_manager_temp_screen(bot, new_session, user_info)
 
     else:
         bot.reply_to(message, "Мб зарегаетесь для начала!")
@@ -91,11 +87,11 @@ def photo_handler(message):
     role = new_session.get_role(uid)
     stage = new_session.get_stage(uid)
 
-    user_info = sc.UserInfo(uid=uid, role=role, companies=[], message=message)
+    user_info = ds.UserInfo(uid=uid, role=role, companies=[], message=message)
 
     if role == "Role.WORKER":
         if stage == "WorkerStage.GET_PHOTO":
-            sc.set_getting_photo_screen(bot, new_session, user_info)
+            ws.set_getting_photo_screen(bot, new_session, user_info)
 
 
 @server.route("/" + TOKEN, methods=["POST"])
