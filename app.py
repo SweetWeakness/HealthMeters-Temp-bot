@@ -15,7 +15,7 @@ config = configparser.ConfigParser()
 config.read("config.ini")
 
 TOKEN = config["release"]["token"]
-webhook_url = config["debug"]["webhook_url"] + "/" + TOKEN
+webhook_url = config["release"]["webhook_url"] + "/" + TOKEN
 
 bot = telebot.TeleBot(TOKEN)
 
