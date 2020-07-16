@@ -5,15 +5,18 @@ ONE = 1
 
 
 class ManagerStage(IntFlag):
-    GET_INFO = 1
+    CHOOSING_OPTION = 1
+    GET_INFO = 2
+    ASK_TEMP = 3
 
 
 class WorkerStage(IntFlag):
-    GET_TEMP = 2
-    VALIDATION_TEMP = 3
-    ACCEPT_TEMP = 4
-    GET_PHOTO = 5
-    ACCEPT_PHOTO = 6
+    GET_TEMP = 4
+    VALIDATION_TEMP = 5
+    ACCEPT_TEMP = 6
+    GET_PHOTO = 7
+    ACCEPT_PHOTO = 8
+    GET_COMPANY = 9
 
 
 class Role(IntFlag):
@@ -21,3 +24,4 @@ class Role(IntFlag):
     ADMIN = 1
     MANAGER = 2
     WORKER = 3
+    NOBODY = 4

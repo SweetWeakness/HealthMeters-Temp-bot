@@ -5,8 +5,11 @@ import configparser
 
 import database as db
 import api_requests as ar
-import screens as sc
+from screens import worker_screens as ws, manager_screens as ms, default_screens as ds
+from localization import Localization, Language
 
+
+localization = Localization(Language.ru)
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -22,64 +25,78 @@ server = Flask(__name__)
 @bot.message_handler(commands=["start"])
 def start(message: telebot.types.Message) -> None:
     uid = message.from_user.id
+    print(uid)
 
     companies = ar.get_companies_list(uid)
 
-    if len(companies) == 1:
+    if len(companies) > 0:
         role = ar.get_role(uid, companies[0])
-        user_info = sc.UserInfo(uid, role, message)
-        sc.set_start_screen(bot, new_session, user_info)
+        user_info = ds.UserInfo(uid=uid, role=role, companies=[], message=message)
 
-    elif len(companies) > 1:
-        # Todo Изменить на выбор из вариантов
-        print("we are implementing this")
+        ds.set_start_screen(bot, new_session, user_info)
 
     else:
-        bot.reply_to(message, "Вас нет в системе. Обратитесь к администратору.")
+        bot.reply_to(message, localization.system_access_error)
 
 
 @bot.message_handler(content_types=["text"])
 def text_handler(message: telebot.types.Message):
     uid = message.from_user.id
     role = new_session.get_role(uid)
-    stage = new_session.get_role_stage(uid, role)
+    stage = new_session.get_stage(uid)
 
-    user_info = sc.UserInfo(uid, role, message)
-    # print(role)
-    # print(stage)
+    user_info = ds.UserInfo(uid=uid, role=role, companies=[], message=message)
 
     if role == "Role.WORKER":
         if stage == "WorkerStage.GET_TEMP":
-            sc.set_getting_temp_screen(bot, new_session, user_info)
+            ws.set_getting_temp_screen(bot, new_session, user_info)
 
         elif stage == "WorkerStage.VALIDATION_TEMP":
-            sc.set_validation_temp_screen(bot, new_session, user_info)
+            ws.set_validation_temp_screen(bot, new_session, user_info)
 
         elif stage == "WorkerStage.ACCEPT_TEMP":
-            sc.set_accept_temp_screen(bot, new_session, user_info)
+            ws.set_accept_temp_screen(bot, new_session, user_info)
 
         elif stage == "WorkerStage.ACCEPT_PHOTO":
-            sc.set_accept_photo_screen(bot, new_session, user_info)
+            ws.set_accept_photo_screen(bot, new_session, user_info)
+
+        elif stage == "WorkerStage.GET_COMPANY":
+            receiving_companies = ds.get_choosed_company(new_session, user_info)
+            user_info.set_companies(receiving_companies)
+
+            ws.set_worker_send_screen(bot, new_session, user_info)
 
     elif role == "Role.MANAGER":
-        if stage == "ManagerStage.GET_INFO":
-            sc.set_stat_screen(bot, user_info)
+        if stage == "ManagerStage.CHOOSING_OPTION":
+            ms.set_choosing_option_screen(bot, new_session, user_info)
+
+        elif stage == "ManagerStage.GET_INFO":
+            receiving_companies = ds.get_choosed_company(new_session, user_info)
+            user_info.set_companies(receiving_companies)
+
+            ms.set_manager_info_screen(bot, new_session, user_info)
+
+        elif stage == "ManagerStage.ASK_TEMP":
+            receiving_companies = ds.get_choosed_company(new_session, user_info)
+            user_info.set_companies(receiving_companies)
+
+            ms.set_manager_temp_screen(bot, new_session, user_info)
 
     else:
-        bot.reply_to(message, "Мб зарегаетесь для начала!")
+        bot.reply_to(message, localization.system_access_error)
 
 
 @bot.message_handler(content_types=["photo"])
 def photo_handler(message):
     uid = message.from_user.id
     role = new_session.get_role(uid)
-    stage = new_session.get_role_stage(uid, role)
+    stage = new_session.get_stage(uid)
 
-    user_info = sc.UserInfo(uid, role, message)
+    user_info = ds.UserInfo(uid=uid, role=role, companies=[], message=message)
 
     if role == "Role.WORKER":
         if stage == "WorkerStage.GET_PHOTO":
-            sc.set_getting_photo_screen(bot, new_session, user_info)
+            ws.set_getting_photo_screen(bot, new_session, user_info)
 
 
 @server.route("/" + TOKEN, methods=["POST"])
