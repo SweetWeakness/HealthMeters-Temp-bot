@@ -6,7 +6,10 @@ import configparser
 import database as db
 import api_requests as ar
 from screens import worker_screens as ws, manager_screens as ms, default_screens as ds
+from localization import Localization, Language
 
+
+localization = Localization(Language.ru)
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -33,7 +36,7 @@ def start(message: telebot.types.Message) -> None:
         ds.set_start_screen(bot, new_session, user_info)
 
     else:
-        bot.reply_to(message, "Вас нет в системе. Обратитесь к администратору.")
+        bot.reply_to(message, localization.system_access_error)
 
 
 @bot.message_handler(content_types=["text"])
@@ -80,7 +83,7 @@ def text_handler(message: telebot.types.Message):
             ms.set_manager_temp_screen(bot, new_session, user_info)
 
     else:
-        bot.reply_to(message, "Мб зарегаетесь для начала!")
+        bot.reply_to(message, localization.system_access_error)
 
 
 @bot.message_handler(content_types=["photo"])

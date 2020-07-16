@@ -47,6 +47,7 @@ ru = {
     "access_error": "У вас нет доступа. Обратитесь к администратору.",
     "manager_ask_measure": "Ваш менеджер просит измерить температуру!",
     "stats_message": "Статистика была создана автоматически",
+    "system_access_error": "Вас нет в системе. Обратитесь к администратору.",
 
     # roles -------------------------------------------------------------------
     "role_admin": "Администратор",
@@ -200,6 +201,10 @@ class Localization:
     @property
     def stats_message(self) -> str:
         return localization[self.language]["stats_message"]
+
+    @property
+    def system_access_error(self) -> str:
+        return localization[self.language]["system_access_error"]
 
     # roles -------------------------------------------------------------------
     @property
