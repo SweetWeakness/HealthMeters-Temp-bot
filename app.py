@@ -7,6 +7,7 @@ import database as db
 import api_requests as ar
 from screens import worker_screens as ws, manager_screens as ms, default_screens as ds
 
+
 config = configparser.ConfigParser()
 config.read("config.ini")
 
@@ -21,6 +22,7 @@ server = Flask(__name__)
 @bot.message_handler(commands=["start"])
 def start(message: telebot.types.Message) -> None:
     uid = message.from_user.id
+    print(uid)
 
     companies = ar.get_companies_list(uid)
 

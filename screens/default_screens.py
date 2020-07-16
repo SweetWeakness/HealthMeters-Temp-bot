@@ -3,6 +3,10 @@ import telebot
 import keyboards
 import stages as st
 import api_requests as ar
+from localization import Localization, Language
+
+
+localization = Localization(Language.ru)
 
 
 class UserInfo:
@@ -31,13 +35,13 @@ def set_start_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
         keyboard = keyboards.get_manager_keyboard()
 
     else:
-        bot.reply_to(user.message, "У вас нет доступа. Обратитесь к администратору.")
+        bot.reply_to(user.message, localization.access_error)
         return
 
     users_db.set_role(user.uid, new_role)
     users_db.set_stage(user.uid, new_stage)
 
-    bot.reply_to(user.message, "Здравствуйте!", reply_markup=keyboard)
+    bot.reply_to(user.message, localization.greeting, reply_markup=keyboard)
 
 
 def get_choosed_company(users_db, user: UserInfo) -> list:
@@ -50,7 +54,7 @@ def get_choosed_company(users_db, user: UserInfo) -> list:
     if user.message.text in companies:
         return [user.message.text]
 
-    elif user.message.text == "Выбрать все":
+    elif user.message.text == localization.choose_all:
         return companies
 
     else:

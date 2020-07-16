@@ -1,6 +1,7 @@
 import telebot
 from localization import Localization, Language
 
+
 localization = Localization(Language.ru)
 
 
@@ -36,7 +37,7 @@ def get_manager_keyboard():
     # button1 = telebot.types.KeyboardButton(text=localization.stat_employee)
     # button2 = telebot.types.KeyboardButton(text=localization.list_attach_employee)
     button3 = telebot.types.KeyboardButton(text=localization.common_stat)
-    button4 = telebot.types.KeyboardButton(text=localization.ask_temp)
+    button4 = telebot.types.KeyboardButton(text=localization.ask_measure)
 
     keyboard.add(button4, button3)
 
@@ -68,8 +69,8 @@ def get_role_choose_keyboard():
 def get_accept_keyboard():
     keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
 
-    button1 = telebot.types.KeyboardButton(text="Все верно")
-    button2 = telebot.types.KeyboardButton(text="Ошибка, щас исправлю")
+    button1 = telebot.types.KeyboardButton(text=localization.accept)
+    button2 = telebot.types.KeyboardButton(text=localization.mistake)
 
     keyboard.add(button1, button2)
 
@@ -87,6 +88,6 @@ def get_companies_keyboard(comp_list: list):
         button = telebot.types.KeyboardButton(text=comp)
         keyboard.add(button)
 
-    keyboard.add(telebot.types.KeyboardButton(text="Выбрать все"))
+    keyboard.add(telebot.types.KeyboardButton(text=localization.choose_all))
 
     return keyboard
