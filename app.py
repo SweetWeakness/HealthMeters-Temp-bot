@@ -41,8 +41,11 @@ def start(message: telebot.types.Message) -> None:
 @bot.message_handler(content_types=["text"])
 def text_handler(message: telebot.types.Message):
     uid = message.from_user.id
-    role = new_session.get_role(uid)
-    stage = new_session.get_stage(uid)
+    if new_session.exist(uid):
+        role = new_session.get_role(uid)
+        stage = new_session.get_stage(uid)
+    else:
+        role = "no role"
 
     user_info = ds.UserInfo(uid=uid, role=role, companies=[], message=message)
 
@@ -88,8 +91,11 @@ def text_handler(message: telebot.types.Message):
 @bot.message_handler(content_types=["photo"])
 def photo_handler(message):
     uid = message.from_user.id
-    role = new_session.get_role(uid)
-    stage = new_session.get_stage(uid)
+    if new_session.exist(uid):
+        role = new_session.get_role(uid)
+        stage = new_session.get_stage(uid)
+    else:
+        role = "no role"
 
     user_info = ds.UserInfo(uid=uid, role=role, companies=[], message=message)
 

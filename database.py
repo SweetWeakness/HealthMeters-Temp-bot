@@ -27,3 +27,6 @@ class SessionsStorage:
 
     def set_data(self, uid: int, data: str) -> None:
         self.uid_data.set(str(uid), str(data))
+
+    def exist(self, uid: int) -> bool:
+        return self.uid_role.exists(uid)
