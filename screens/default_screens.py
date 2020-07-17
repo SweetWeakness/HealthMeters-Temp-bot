@@ -10,11 +10,15 @@ localization = Localization(Language.ru)
 
 
 class UserInfo:
-    def __init__(self, uid: int, role: str, companies: list, message: telebot.types.Message):
-        self.uid = uid
+    def __init__(self, message: telebot.types.Message, users_db):
         self.message = message
-        self.role = role
-        self.companies = companies
+        self.uid = message.from_user.id
+        self.companies = []
+        if users_db.exist(self.uid):
+            self.role = users_db.get_role(self.uid)
+            self.stage = users_db.get_stage(self.uid)
+        else:
+            self.role = st.Role.NOBODY
 
     def set_role(self, role):
         self.role = role

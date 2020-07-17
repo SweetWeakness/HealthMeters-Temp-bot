@@ -28,8 +28,9 @@ def start(message: telebot.types.Message) -> None:
     companies = ar.get_companies_list(uid)
 
     if len(companies) > 0:
+        user_info = ds.UserInfo(message=message, users_db=users_db)
         role = ar.get_role(uid, companies[0])
-        user_info = ds.UserInfo(uid=uid, role=role, companies=[], message=message)
+        user_info.set_role(role)
 
         ds.set_start_screen(bot, users_db, user_info)
 
@@ -40,44 +41,38 @@ def start(message: telebot.types.Message) -> None:
 @bot.message_handler(content_types=["text"])
 def text_handler(message: telebot.types.Message):
     uid = message.from_user.id
-    if users_db.exist(uid):
-        role = users_db.get_role(uid)
-        stage = users_db.get_stage(uid)
-    else:
-        role = "Role.Nobody"
+    user_info = ds.UserInfo(message=message, users_db=users_db)
 
-    user_info = ds.UserInfo(uid=uid, role=role, companies=[], message=message)
-
-    if role == "Role.WORKER":
-        if stage == "WorkerStage.GET_TEMP":
+    if user_info.role == "Role.WORKER":
+        if user_info.stage == "WorkerStage.GET_TEMP":
             ws.set_getting_temp_screen(bot, users_db, user_info)
 
-        elif stage == "WorkerStage.VALIDATION_TEMP":
+        elif user_info.stage == "WorkerStage.VALIDATION_TEMP":
             ws.set_validation_temp_screen(bot, users_db, user_info)
 
-        elif stage == "WorkerStage.ACCEPT_TEMP":
+        elif user_info.stage == "WorkerStage.ACCEPT_TEMP":
             ws.set_accept_temp_screen(bot, users_db, user_info)
 
-        elif stage == "WorkerStage.ACCEPT_PHOTO":
+        elif user_info.stage == "WorkerStage.ACCEPT_PHOTO":
             ws.set_accept_photo_screen(bot, users_db, user_info)
 
-        elif stage == "WorkerStage.GET_COMPANY":
+        elif user_info.stage == "WorkerStage.GET_COMPANY":
             receiving_companies = ds.get_choosed_company(users_db, user_info)
             user_info.set_companies(receiving_companies)
 
             ws.set_worker_send_screen(bot, users_db, user_info)
 
-    elif role == "Role.MANAGER":
-        if stage == "ManagerStage.CHOOSING_OPTION":
+    elif user_info.role == "Role.MANAGER":
+        if user_info.stage == "ManagerStage.CHOOSING_OPTION":
             ms.set_choosing_option_screen(bot, users_db, user_info)
 
-        elif stage == "ManagerStage.GET_INFO":
+        elif user_info.stage == "ManagerStage.GET_INFO":
             receiving_companies = ds.get_choosed_company(users_db, user_info)
             user_info.set_companies(receiving_companies)
 
             ms.set_manager_info_screen(bot, users_db, user_info)
 
-        elif stage == "ManagerStage.ASK_TEMP":
+        elif user_info.stage == "ManagerStage.ASK_TEMP":
             receiving_companies = ds.get_choosed_company(users_db, user_info)
             user_info.set_companies(receiving_companies)
 
@@ -90,16 +85,10 @@ def text_handler(message: telebot.types.Message):
 @bot.message_handler(content_types=["photo"])
 def photo_handler(message):
     uid = message.from_user.id
-    if users_db.exist(uid):
-        role = users_db.get_role(uid)
-        stage = users_db.get_stage(uid)
-    else:
-        role = "Role.Nobody"
+    user_info = ds.UserInfo(message=message, users_db=users_db)
 
-    user_info = ds.UserInfo(uid=uid, role=role, companies=[], message=message)
-
-    if role == "Role.WORKER":
-        if stage == "WorkerStage.GET_PHOTO":
+    if user_info.role == "Role.WORKER":
+        if user_info.stage == "WorkerStage.GET_PHOTO":
             ws.set_getting_photo_screen(bot, users_db, user_info)
 
 
