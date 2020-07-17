@@ -13,13 +13,12 @@ localization = Localization(Language.ru)
 
 config = configparser.ConfigParser()
 config.read("config.ini")
-
 TOKEN = config["release"]["token"]
 webhook_url = config["release"]["webhook_url"] + "/" + TOKEN
 
 bot = telebot.TeleBot(TOKEN)
-
 server = Flask(__name__)
+new_session = db.SessionsStorage()
 
 
 @bot.message_handler(commands=["start"])
@@ -121,5 +120,4 @@ def webhook():
 
 if __name__ == "__main__":
     print(bot.get_webhook_info().url)
-    new_session = db.SessionsStorage()
     server.run(threaded=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
