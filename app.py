@@ -25,7 +25,6 @@ server = Flask(__name__)
 @bot.message_handler(commands=["start"])
 def start(message: telebot.types.Message) -> None:
     uid = message.from_user.id
-    print(uid)
 
     companies = ar.get_companies_list(uid)
 
@@ -117,4 +116,4 @@ def webhook():
 if __name__ == "__main__":
     print(bot.get_webhook_info())
     new_session = db.SessionsStorage()
-    server.run(host="127.0.0.1", port=int(os.environ.get("PORT", 80)))
+    server.run(threaded=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
