@@ -24,6 +24,8 @@ server = Flask(__name__)
 
 @bot.message_handler(commands=["start"])
 def start(message: telebot.types.Message) -> None:
+    new_session = db.SessionsStorage()
+
     uid = message.from_user.id
 
     companies = ar.get_companies_list(uid)
@@ -40,6 +42,8 @@ def start(message: telebot.types.Message) -> None:
 
 @bot.message_handler(content_types=["text"])
 def text_handler(message: telebot.types.Message):
+    new_session = db.SessionsStorage()
+
     uid = message.from_user.id
     if new_session.exist(uid):
         role = new_session.get_role(uid)
@@ -90,6 +94,8 @@ def text_handler(message: telebot.types.Message):
 
 @bot.message_handler(content_types=["photo"])
 def photo_handler(message):
+    new_session = db.SessionsStorage()
+
     uid = message.from_user.id
     if new_session.exist(uid):
         role = new_session.get_role(uid)
@@ -121,5 +127,5 @@ def webhook():
 
 if __name__ == "__main__":
     print(bot.get_webhook_info().url)
-    new_session = db.SessionsStorage()
+    # new_session = db.SessionsStorage()
     server.run(threaded=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
