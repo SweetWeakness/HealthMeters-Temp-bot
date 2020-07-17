@@ -14,7 +14,7 @@ def get_companies_list(uid: int) -> list:
             "telegram_id": uid,
         })
 
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.RequestException:
         return []
 
     res_json = res.json()
@@ -28,7 +28,7 @@ def get_role(uid: int, company_guid: str) -> str:
             "company": company_guid
         })
 
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.RequestException:
         return "no role"
 
     res_json = res.json()
@@ -42,7 +42,7 @@ def get_attached_workers(uid: int, company_guid: str) -> list:
             "company": company_guid
         })
 
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.RequestException:
         return []
 
     res_json = res.json()
@@ -56,7 +56,7 @@ def get_workers_stats(uid: int, company_guid: str) -> list:
             "company": company_guid
         })
 
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.RequestException:
         return []
 
     res_json = res.json()
@@ -71,7 +71,7 @@ def add_health_data(uid: int, company_guid: str, temp: float) -> dict():
             "temperature": temp
         })
 
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.RequestException:
         return "False"
 
     res_json = res.json()
