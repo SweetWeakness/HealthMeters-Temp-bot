@@ -1,4 +1,5 @@
 import redis
+import os
 
 
 class SessionsStorage:
@@ -7,9 +8,9 @@ class SessionsStorage:
     uid_stage: redis.Redis
 
     def __init__(self):
-        self.uid_role = redis.Redis(host="127.0.0.1", port=6379, db=0, decode_responses=True)
-        self.uid_data = redis.Redis(host="127.0.0.1", port=6379, db=1, decode_responses=True)
-        self.uid_stage = redis.Redis(host="127.0.0.1", port=6379, db=2, decode_responses=True)
+        self.uid_role = redis.from_url(url=os.environ['REDISCLOUD_URL'], db=0, decode_responses=True)
+        self.uid_data = redis.from_url(url=os.environ['REDISCLOUD_URL'], db=1, decode_responses=True)
+        self.uid_stage = redis.from_url(url=os.environ['REDISCLOUD_URL'], db=2, decode_responses=True)
 
     def get_role(self, uid: int) -> str:
         return self.uid_role.get(str(uid))
