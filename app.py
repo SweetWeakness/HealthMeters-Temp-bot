@@ -9,16 +9,19 @@ from screens import worker_screens as ws, manager_screens as ms, default_screens
 from localization import Localization, Language
 
 
-localization = Localization(Language.ru)
-
 config = configparser.ConfigParser()
 config.read("config.ini")
+conf_state = "release"
+
+localization = Localization(Language.ru)
+
+
 TOKEN = config["release"]["token"]
-webhook_url = config["release"]["webhook_url"] + "/" + TOKEN
+webhook_url = config[conf_state]["webhook_url"] + "/" + TOKEN
 
 bot = telebot.TeleBot(TOKEN)
 server = Flask(__name__)
-users_db = db.SessionsStorage()
+users_db = db.SessionsStorage(conf_state)
 
 
 @bot.message_handler(commands=["start"])
@@ -109,4 +112,4 @@ def webhook():
 
 if __name__ == "__main__":
     print("webhook's url is: {}\n".format(bot.get_webhook_info().url))
-    server.run(threaded=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    server.run(threaded=True, host="0.0.0.0", port=int(os.environ.get("PORT", 80)))
