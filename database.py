@@ -1,4 +1,5 @@
 import redis
+import os
 
 
 class SessionsStorage:
@@ -8,14 +9,12 @@ class SessionsStorage:
 
     def __init__(self, state):
         if state == "release":
-            redis_host = "redis-11174.c52.us-east-1-4.ec2.cloud.redislabs.com"
-            redis_port = 11174
+            redis_url = os.environ['REDISCLOUD_URL']
         else:
-            redis_host = "127.0.0.1"
-            redis_port = 6379
-        self.uid_role = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
-        self.uid_data = redis.Redis(host=redis_host, port=redis_port, db=1, decode_responses=True)
-        self.uid_stage = redis.Redis(host=redis_host, port=redis_port, db=2, decode_responses=True)
+            redis_url = "redis://localhost:6379"
+        self.uid_role = redis.from_url(url=redis_url, db=0, decode_responses=True)
+        self.uid_data = redis.from_url(url=redis_url, db=1, decode_responses=True)
+        self.uid_stage = redis.from_url(url=redis_url, db=2, decode_responses=True)
 
     def get_role(self, uid: int) -> str:
         return self.uid_role.get(str(uid))
