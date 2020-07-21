@@ -28,10 +28,10 @@ class SessionsStorage:
         return self.uid_stage.get(str(uid))
 
     def get_role_data(self, uid: int, role: str) -> str:
-        return self.uid_data.get(str(uid) + str(role))
+        return self.uid_stage.get(str(uid) + str(role))
 
     def set_role_data(self, uid: int, role: str, data: str) -> None:
-        self.uid_data.set(str(uid) + str(role), str(data))
+        self.uid_stage.set(str(uid) + str(role), str(data))
 
     def role_exist(self, uid: int) -> bool:
         return self.uid_role.exists(uid)
