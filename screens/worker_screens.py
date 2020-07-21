@@ -88,7 +88,7 @@ def set_accept_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
             reply_mes = localization.accept_photo
             keyboard = keyboards.get_employee_keyboard()
 
-            ar.add_health_data(user.uid, companies[0], users_db.get_data(user.uid))
+            ar.add_health_data(user.uid, companies[0]["guid"], users_db.get_data(user.uid))
 
         elif len(companies) > 1:
             new_stage = st.WorkerStage.GET_COMPANY
@@ -113,8 +113,8 @@ def set_worker_send_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> No
         reply_mes = localization.accept_photo
         keyboard = keyboards.get_employee_keyboard()
 
-        for company_guid in user.companies:
-            ar.add_health_data(user.uid, company_guid, users_db.get_data(user.uid))
+        for company in user.companies:
+            ar.add_health_data(user.uid, company["guid"], users_db.get_data(user.uid))
 
     else:
         bot.reply_to(user.message, localization.missing_reply)

@@ -10,11 +10,18 @@ localization = Localization(Language.ru)
 
 
 class UserInfo:
-    def __init__(self, uid: int, role: str, companies: list, message: telebot.types.Message):
-        self.uid = uid
+    def __init__(self, message: telebot.types.Message, users_db):
         self.message = message
-        self.role = role
-        self.companies = companies
+        self.uid = message.from_user.id
+        self.companies = []
+        if users_db.stage_exist(self.uid):
+            self.stage = users_db.get_stage(self.uid)
+        else:
+            self.stage = "no stage"
+        if users_db.role_exist(self.uid):
+            self.role = users_db.get_role(self.uid)
+        else:
+            self.role = st.Role.NOBODY
 
     def set_role(self, role):
         self.role = role
@@ -51,11 +58,12 @@ def get_choosed_company(users_db, user: UserInfo) -> list:
         users_db.set_role(user.uid, st.Role.NOBODY)
         return []
 
-    if user.message.text in companies:
-        return [user.message.text]
-
-    elif user.message.text == localization.choose_all:
+    if user.message.text == localization.choose_all:
         return companies
 
     else:
+        for company in companies:
+            if company["name"] == user.message.text:
+                return [company]
+
         return []
