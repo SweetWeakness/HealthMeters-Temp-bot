@@ -40,7 +40,7 @@ def set_validation_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
             keyboard = keyboards.get_accept_keyboard()
 
             users_db.set_stage(user.uid, st.WorkerStage.ACCEPT_TEMP)
-            users_db.set_data(user.uid, temp)
+            users_db.set_role_data(user.uid, user.role, temp)
         else:
             reply_mes = localization.temp_validation
             keyboard = keyboards.get_empty_keyboard()
@@ -88,7 +88,7 @@ def set_accept_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
             reply_mes = localization.accept_photo
             keyboard = keyboards.get_employee_keyboard()
 
-            ar.add_health_data(user.uid, companies[0]["guid"], users_db.get_data(user.uid))
+            ar.add_health_data(user.uid, companies[0]["guid"], users_db.get_role_data(user.uid, user.role))
 
         elif len(companies) > 1:
             new_stage = st.WorkerStage.GET_COMPANY
@@ -114,7 +114,7 @@ def set_worker_send_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> No
         keyboard = keyboards.get_employee_keyboard()
 
         for company in user.companies:
-            ar.add_health_data(user.uid, company["guid"], users_db.get_data(user.uid))
+            ar.add_health_data(user.uid, company["guid"], users_db.get_role_data(user.uid, user.role))
 
     else:
         bot.reply_to(user.message, localization.missing_reply)
