@@ -8,7 +8,6 @@ class SessionsStorage:
     def __init__(self, state):
         if state == "release":
             redis_url = os.environ['REDISCLOUD_URL']
-            print(redis_url)
         else:
             redis_url = "redis://localhost:6379"
         self.db = redis.from_url(url=redis_url, db=0, decode_responses=True)

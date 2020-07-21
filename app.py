@@ -27,7 +27,6 @@ users_db = db.SessionsStorage(conf_state)
 @bot.message_handler(commands=["start"])
 def start(message: telebot.types.Message) -> None:
     uid = message.from_user.id
-    print(uid)
 
     companies = ar.get_companies_list(uid)
 
@@ -44,7 +43,6 @@ def start(message: telebot.types.Message) -> None:
 
 @bot.message_handler(content_types=["text"])
 def text_handler(message: telebot.types.Message):
-    uid = message.from_user.id
     user_info = ds.UserInfo(message=message, users_db=users_db)
 
     if user_info.role == "Role.WORKER":
@@ -91,7 +89,6 @@ def text_handler(message: telebot.types.Message):
 
 @bot.message_handler(content_types=["photo"])
 def photo_handler(message):
-    uid = message.from_user.id
     user_info = ds.UserInfo(message=message, users_db=users_db)
 
     if user_info.role == "Role.WORKER":
