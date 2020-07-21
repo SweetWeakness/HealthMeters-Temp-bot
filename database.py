@@ -15,6 +15,7 @@ class SessionsStorage:
         self.uid_role = redis.from_url(url=redis_url, db=0, decode_responses=True)
         self.uid_stage = redis.from_url(url=redis_url, db=1, decode_responses=True)
 
+
     def get_role(self, uid: int) -> str:
         return self.uid_role.get(str(uid))
 
