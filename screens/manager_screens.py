@@ -20,7 +20,7 @@ def get_temp_stats(manager_uid: int, companies_list: list) -> str:
     ans = ""
 
     for company in companies_list:
-        workers_stats = ar.get_workers_stats(manager_uid, company[1])
+        workers_stats = ar.get_workers_stats(manager_uid, company["guid"])
         for stat in workers_stats:
             ans += "_" + stat["initials"] + "_"
             if "date" in stat:
@@ -64,7 +64,7 @@ def manager_temp_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None
     companies = ar.get_companies_list(user.uid)
 
     if len(companies) == 1:
-        workers_list = ar.get_attached_workers(user.uid, companies[0][1])
+        workers_list = ar.get_attached_workers(user.uid, companies[0]["guid"])
         for worker in workers_list:
             try:
                 bot.send_message(worker["telegram_id"], localization.manager_ask_measure)
@@ -120,8 +120,8 @@ def set_manager_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
         reply_mes = localization.asked_measure
         keyboard = keyboards.get_manager_keyboard()
 
-        for company_guid in user.companies:
-            workers_list = ar.get_attached_workers(user.uid, company_guid)
+        for company in user.companies:
+            workers_list = ar.get_attached_workers(user.uid, company["guid"])
             for worker in workers_list:
                 try:
                     bot.send_message(worker["telegram_id"], localization.manager_ask_measure)

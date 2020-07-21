@@ -55,11 +55,12 @@ def get_choosed_company(users_db, user: UserInfo) -> list:
         users_db.set_role(user.uid, st.Role.NOBODY)
         return []
 
-    if user.message.text in companies:
-        return [user.message.text]
-
-    elif user.message.text == localization.choose_all:
+    if user.message.text == localization.choose_all:
         return companies
 
     else:
+        for company in companies:
+            if company["name"] == user.message.text:
+                return [company]
+
         return []

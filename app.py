@@ -11,7 +11,7 @@ from localization import Localization, Language
 
 config = configparser.ConfigParser()
 config.read("config.ini")
-conf_state = "debug"
+conf_state = "release"
 
 localization = Localization(Language.ru)
 
@@ -33,7 +33,7 @@ def start(message: telebot.types.Message) -> None:
 
     if len(companies) > 0:
         user_info = ds.UserInfo(message=message, users_db=users_db)
-        role = ar.get_role(uid, companies[0][1])
+        role = ar.get_role(uid, companies[0]["guid"])
         user_info.set_role(role)
 
         ds.set_start_screen(bot, users_db, user_info)
@@ -66,6 +66,9 @@ def text_handler(message: telebot.types.Message):
 
             ws.set_worker_send_screen(bot, users_db, user_info)
 
+        else:
+            bot.reply_to(message, localization.missing_reply)
+
     elif user_info.role == "Role.MANAGER":
         if user_info.stage == "ManagerStage.CHOOSING_OPTION":
             ms.set_choosing_option_screen(bot, users_db, user_info)
@@ -94,6 +97,21 @@ def photo_handler(message):
     if user_info.role == "Role.WORKER":
         if user_info.stage == "WorkerStage.GET_PHOTO":
             ws.set_getting_photo_screen(bot, users_db, user_info)
+
+        else:
+            bot.reply_to(message, localization.missing_reply)
+
+    elif user_info.role == "Role.MANAGER":
+        bot.reply_to(message, localization.missing_reply)
+
+    else:
+        bot.reply_to(message, localization.system_access_error)
+
+
+@bot.message_handler(content_types=["audio", "document", "sticker", "video",
+                                    "video_note", "voice", "location", "contact"])
+def other_types_handler(message):
+    bot.reply_to(message, localization.missing_reply)
 
 
 @server.route("/" + TOKEN, methods=["POST"])
