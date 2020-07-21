@@ -5,7 +5,7 @@ import configparser
 config = configparser.ConfigParser()
 config.read("config.ini")
 
-server_url = config["debug"]["server_url"]
+server_url = config["release"]["server_url"]
 
 
 def get_companies_list(uid: int) -> list:
