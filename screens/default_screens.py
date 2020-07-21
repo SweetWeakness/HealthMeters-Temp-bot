@@ -14,9 +14,12 @@ class UserInfo:
         self.message = message
         self.uid = message.from_user.id
         self.companies = []
-        if users_db.exist(self.uid):
-            self.role = users_db.get_role(self.uid)
+        if users_db.stage_exist(self.uid):
             self.stage = users_db.get_stage(self.uid)
+        else:
+            self.stage = "no stage"
+        if users_db.role_exist(self.uid):
+            self.role = users_db.get_role(self.uid)
         else:
             self.role = st.Role.NOBODY
 
