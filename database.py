@@ -13,6 +13,7 @@ class SessionsStorage:
             redis_url = "redis://localhost:6379"
         self.db = redis.from_url(url=redis_url, db=0, decode_responses=True)
 
+
     def get_role(self, uid: int) -> str:
         return self.db.get(str(uid))
 
