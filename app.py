@@ -11,7 +11,7 @@ from localization import Localization, Language
 
 config = configparser.ConfigParser()
 config.read("config.ini")
-conf_state = "release"
+conf_state = "debug"
 
 localization = Localization(Language.ru)
 
@@ -27,12 +27,13 @@ users_db = db.SessionsStorage(conf_state)
 @bot.message_handler(commands=["start"])
 def start(message: telebot.types.Message) -> None:
     uid = message.from_user.id
+    print(uid)
 
     companies = ar.get_companies_list(uid)
 
     if len(companies) > 0:
         user_info = ds.UserInfo(message=message, users_db=users_db)
-        role = ar.get_role(uid, companies[0])
+        role = ar.get_role(uid, companies[0][1])
         user_info.set_role(role)
 
         ds.set_start_screen(bot, users_db, user_info)
@@ -111,5 +112,6 @@ def webhook():
 
 
 if __name__ == "__main__":
+    webhook()
     print("webhook's url is: {}\n".format(bot.get_webhook_info().url))
     server.run(threaded=True, host="0.0.0.0", port=int(os.environ.get("PORT", 80)))

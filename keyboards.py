@@ -85,7 +85,7 @@ def get_companies_keyboard(comp_list: list):
     keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
 
     for comp in comp_list:
-        button = telebot.types.KeyboardButton(text=comp)
+        button = telebot.types.KeyboardButton(text=comp[0])
         keyboard.add(button)
 
     keyboard.add(telebot.types.KeyboardButton(text=localization.choose_all))

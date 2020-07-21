@@ -20,7 +20,7 @@ def get_temp_stats(manager_uid: int, companies_list: list) -> str:
     ans = ""
 
     for company in companies_list:
-        workers_stats = ar.get_workers_stats(manager_uid, company)
+        workers_stats = ar.get_workers_stats(manager_uid, company[1])
         for stat in workers_stats:
             ans += "_" + stat["initials"] + "_"
             if "date" in stat:
@@ -64,7 +64,7 @@ def manager_temp_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None
     companies = ar.get_companies_list(user.uid)
 
     if len(companies) == 1:
-        workers_list = ar.get_attached_workers(user.uid, companies[0])
+        workers_list = ar.get_attached_workers(user.uid, companies[0][1])
         for worker in workers_list:
             try:
                 bot.send_message(worker["telegram_id"], localization.manager_ask_measure)
