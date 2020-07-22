@@ -126,7 +126,22 @@ def webhook():
     return "!", 200
 
 
+@server.route("/telegram_schedule", methods=['POST'])
+def get_telegram_schedule():
+    res = request.get_json()
+    if "telegram_id" in res:
+        for telegram_id in res["telegram_id"]:
+            try:
+                bot.send_message(telegram_id, localization.manager_ask_measure)
+            except telebot.apihelper.ApiException:
+                print("не зарегался {}".format(telegram_id))
+        return "ok"
+
+    else:
+        return "failed to get list of tg_id", 404
+
+
 if __name__ == "__main__":
     webhook()
     print("webhook's url is: {}\n".format(bot.get_webhook_info().url))
-    server.run(threaded=True, host="0.0.0.0", port=int(os.environ.get("PORT", 80)))
+    server.run(threaded=True, host="127.0.0.1", port=int(os.environ.get("PORT", 80)))
