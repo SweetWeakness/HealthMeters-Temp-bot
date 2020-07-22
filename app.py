@@ -135,7 +135,7 @@ def get_telegram_schedule():
                 bot.send_message(telegram_id, localization.manager_ask_measure)
             except telebot.apihelper.ApiException:
                 print("не зарегался {}".format(telegram_id))
-        return "ok"
+        return {"status": "ok"}
 
     else:
         return "failed to get list of tg_id", 404
