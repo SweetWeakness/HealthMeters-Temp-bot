@@ -108,7 +108,15 @@ def photo_handler(message):
 @bot.message_handler(content_types=["audio", "document", "sticker", "video",
                                     "video_note", "voice", "location", "contact"])
 def other_types_handler(message):
-    bot.reply_to(message, localization.missing_reply)
+    user_info = ds.UserInfo(message=message, users_db=users_db)
+
+    if user_info.role == "Role.WORKER" or user_info.role == "Role.MANAGER":
+        bot.reply_to(message, localization.missing_reply)
+        if user_info.stage == "WorkerStage.VALIDATION_TEMP":
+            bot.send_message(user_info.uid, localization.insert_temp)
+
+    else:
+        bot.reply_to(message, localization.system_access_error)
 
 
 @server.route("/" + TOKEN, methods=["POST"])
@@ -135,13 +143,12 @@ def get_telegram_schedule():
                 bot.send_message(telegram_id, localization.manager_ask_measure)
             except telebot.apihelper.ApiException:
                 print("не зарегался {}".format(telegram_id))
-        return {"status": "ok"}
+        return {"status": "ok"}, 200
 
     else:
-        return "failed to get list of tg_id", 404
+        return "failed to get list of telegram_id", 404
 
 
 if __name__ == "__main__":
-    webhook()
     print("webhook's url is: {}\n".format(bot.get_webhook_info().url))
     server.run(threaded=True, host="127.0.0.1", port=int(os.environ.get("PORT", 80)))
