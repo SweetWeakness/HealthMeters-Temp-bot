@@ -26,7 +26,8 @@ ru = {
     # bot to worker phrases ---------------------------------------------------
     "insert_temp": "Введите вашу температуру (например, 36.6):",
     "ask_temp": "Ваша температура {}, все верно?",
-    "temp_validation": "Мне кажется, вы где-то ошиблись. Попробуйте снова.",
+    "temp_validation": "Мне кажется, вы где-то ошиблись. Введите вашу температуру еще раз:",
+    "photo_validation": "Извините, я вас не понял. Отправьте мне фотографию градусника:",
     "reinsert_temp": "Хорошо, введите вашу температуру еще раз:",
     "accept_temp": "Отлично, теперь отправьте мне фотографию градусника.",
     "got_photo": "Проверьте вашу фотографию (например, виден ли градусник).",
@@ -139,6 +140,10 @@ class Localization:
     @property
     def temp_validation(self) -> str:
         return localization[self.language]["temp_validation"]
+
+    @property
+    def photo_validation(self) -> str:
+        return localization[self.language]["photo_validation"]
 
     @property
     def reinsert_temp(self) -> str:
