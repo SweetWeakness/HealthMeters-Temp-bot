@@ -47,6 +47,7 @@ def set_validation_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
 
     else:
         bot.reply_to(user.message, localization.missing_reply)
+        bot.send_message(user.uid, localization.insert_temp)
         return
 
     bot.reply_to(user.message, reply_mes, reply_markup=keyboard)

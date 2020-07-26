@@ -55,6 +55,10 @@ def text_handler(message: telebot.types.Message):
         elif user_info.stage == "WorkerStage.ACCEPT_TEMP":
             ws.set_accept_temp_screen(bot, users_db, user_info)
 
+        elif user_info.stage == "WorkerStage.GET_PHOTO":
+            bot.reply_to(message, localization.missing_reply)
+            bot.send_message(user_info.uid, localization.photo_validation)
+
         elif user_info.stage == "WorkerStage.ACCEPT_PHOTO":
             ws.set_accept_photo_screen(bot, users_db, user_info)
 
@@ -92,7 +96,11 @@ def photo_handler(message):
     user_info = ds.UserInfo(message=message, users_db=users_db)
 
     if user_info.role == "Role.WORKER":
-        if user_info.stage == "WorkerStage.GET_PHOTO":
+        if user_info.stage == "WorkerStage.VALIDATION_TEMP":
+            bot.reply_to(message, localization.missing_reply)
+            bot.send_message(user_info.uid, localization.insert_temp)
+
+        elif user_info.stage == "WorkerStage.GET_PHOTO":
             ws.set_getting_photo_screen(bot, users_db, user_info)
 
         else:
@@ -114,6 +122,9 @@ def other_types_handler(message):
         bot.reply_to(message, localization.missing_reply)
         if user_info.stage == "WorkerStage.VALIDATION_TEMP":
             bot.send_message(user_info.uid, localization.insert_temp)
+
+        elif user_info.stage == "WorkerStage.GET_PHOTO":
+            bot.send_message(user_info.uid, localization.photo_validation)
 
     else:
         bot.reply_to(message, localization.system_access_error)
