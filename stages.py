@@ -1,8 +1,5 @@
 from enum import IntFlag
 
-MAIN = 0
-ONE = 1
-
 
 class ManagerStage(IntFlag):
     CHOOSING_OPTION = 1
@@ -20,8 +17,6 @@ class WorkerStage(IntFlag):
 
 
 class Role(IntFlag):
-    SUPER_ADMIN = 0
-    ADMIN = 1
     MANAGER = 2
     WORKER = 3
     NOBODY = 4
