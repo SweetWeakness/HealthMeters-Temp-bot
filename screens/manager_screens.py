@@ -44,7 +44,7 @@ def manager_stats_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> Non
 
         bot.send_message(user.uid, temp_stats, parse_mode="markdown")
 
-        reply_mes = localization.made_stats
+        reply_mes = None
         keyboard = None
 
     elif len(companies) > 1:
