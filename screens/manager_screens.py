@@ -12,7 +12,7 @@ localization = Localization(Language.ru)
 
 
 def pretty_date(ugly_date) -> str:
-    date = datetime.strptime(ugly_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+    date = datetime.utcfromtimestamp(ugly_date)
     return date.strftime('%Y-%m-%d %H:%M:%S')
 
 

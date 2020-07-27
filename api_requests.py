@@ -63,7 +63,7 @@ def get_workers_stats(uid: int, company_guid: str) -> list:
     return res_json["users"]
 
 
-def add_health_data(uid: int, company_guid: str, temp: float) -> dict():
+def add_health_data(uid: int, company_guid: str, temp: float) -> bool:
     try:
         res = requests.post(server_url + "/add_health_data", data={
             "telegram_id": uid,
@@ -72,7 +72,11 @@ def add_health_data(uid: int, company_guid: str, temp: float) -> dict():
         })
 
     except requests.exceptions.RequestException:
-        return "False"
+        return False
 
     res_json = res.json()
-    return res_json["status"]
+    if "status" in res_json:
+        if res_json["status"] == "ok":
+            return True
+
+    return False
