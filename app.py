@@ -11,13 +11,22 @@ from localization import Localization, Language
 
 config = configparser.ConfigParser()
 config.read("config.ini")
-conf_state = "release"
+conf_state = "debug"
 
+# TODO: Локаль предлагаю устанавливать не глобально, а для каждого пользователя.
+#  хранить ее можно например в какой-нибудь мапе внутри Localization.
+#  То есть для каждого юзера добавляем запись в мапу вида uid: locale_type.
+#  Это не критично, пока локаль одна, однако в будущем может быть полезно сделать
+#  английскую версию.
+#  Передавать сам uid можно внутрь функции localization service-а.
+#  Пример: localization.system_access_error(uid).
+#  Единсвтенное – из-за этого может возникнуть копипаста, но я придумал как ее обойти,
+#  смотри localization.py для пояснений.
 localization = Localization(Language.ru)
 
 
 TOKEN = config["release"]["token"]
-webhook_url = config[conf_state]["webhook_url"] + "/" + TOKEN
+webhook_url = "%s/%s" % (config[conf_state]["webhook_url"], TOKEN)
 
 bot = telebot.TeleBot(TOKEN)
 server = Flask(__name__)
@@ -32,6 +41,10 @@ def start(message: telebot.types.Message) -> None:
 
     if len(companies) > 0:
         user_info = ds.UserInfo(message=message, users_db=users_db)
+        # TODO [это уже персистентный TODO, который не относится к рефакторингу по первой ревизии]
+        #  Тут как раз и стоит сетапить контекст 'роль/компания' пользователя,
+        #  то есть пользователь в будущем сможет выбирать глобально с данными какой компании
+        #  он взаимодействует в данный момент.
         role = ar.get_role(uid, companies[0]["guid"])
         user_info.set_role(role)
 
@@ -133,6 +146,7 @@ def other_types_handler(message):
 @server.route("/" + TOKEN, methods=["POST"])
 def get_message():
     bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+    # TODO: А почему возвращаем восклицательный знак 0.0 ?
     return "!", 200
 
 
@@ -142,6 +156,7 @@ def webhook():
     bot.remove_webhook()
     bot.set_webhook(url=webhook_url)
     print("now webhook's url is: {}\n".format(bot.get_webhook_info().url))
+    # TODO: А почему возвращаем восклицательный знак 0.0 ?
     return "!", 200
 
 
@@ -163,4 +178,5 @@ def get_telegram_schedule():
 
 if __name__ == "__main__":
     print("webhook's url is: {}\n".format(bot.get_webhook_info().url))
+    # TODO: Стоит вынести в конфиг адрес и порт.
     server.run(threaded=True, host="127.0.0.1", port=int(os.environ.get("PORT", 80)))

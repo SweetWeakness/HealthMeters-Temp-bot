@@ -8,6 +8,7 @@ from screens.default_screens import UserInfo
 from localization import Localization, Language
 
 
+# TODO: Про localization уже поговорили в файлах app.py и localization.py
 localization = Localization(Language.ru)
 
 
@@ -22,6 +23,7 @@ def get_temp_stats(manager_uid: int, companies_list: list) -> str:
     for company in companies_list:
         workers_stats = ar.get_workers_stats(manager_uid, company["guid"])
         for stat in workers_stats:
+            # TODO: Тут лучше использовать форматирование строк с оператором %
             ans += "_" + stat["initials"] + "_"
             if "date" in stat:
                 ans += " *" + str(stat["last_temp"]) + "* "

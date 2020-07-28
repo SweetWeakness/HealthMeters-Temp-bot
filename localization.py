@@ -1,6 +1,8 @@
 import enum
 
 
+# TODO: вот это я бы вынес просто в отдельный файл, можно даже в .json.
+#  так локаль будет проще патчить и отсылать на локализацию переводчикам.
 ru = {
     "add_employee": "Добавить сотрудника",
     "delete_employee": "Удалить сотрудника",
@@ -62,14 +64,29 @@ localization = {
 
 
 class Language(enum.Enum):
+    # TODO: ru -> ru_RU
     ru: str = "ru"
 
 
 class Localization:
+    # TODO: Language стоит переименовать в Locale.
     def __init__(self, language: Language):
         self.language = language.value
 
     @property
+    # TODO: Итак, надеюсь ты пришел сюда из app.py, если нет – посмотри сначала TODO-шки в нем.
+    #  Собственно, эта функция (уже не property) принимает uid.
+    #  Далее, стоит создать функицю getLocale, которая принимает uid и возвращает Locale.
+    #  Получается, пишем так: localization[self.getLocale(uid)]["add_employee"].
+    #  ОДНАКО, это не позволяет избежать копипасты, ведь во всех функциях
+    #  (add_employee, delete_employee, итд) - ты пишешь одну строку и меняешь только последнюю константу
+    #  с, собственно, названием локализуемого свойства.
+    #  Тут я предлагаю создать функцию .localize, принимающую uid и property.
+    #  Тогда в функциях снизу будем писать так:
+    #  self.localize(uid, "add_employee")
+    #  self.localize(uid, "delete_employee")
+    #  итд.
+    #  Это действительно поможет избежать копипасты и трудного рефакторинга в будущем.
     def add_employee(self) -> str:
         return localization[self.language]["add_employee"]
 

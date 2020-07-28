@@ -7,6 +7,7 @@ from screens.default_screens import UserInfo
 from localization import Localization, Language
 
 
+# TODO: Про localization уже поговорили в файлах app.py и localization.py
 localization = Localization(Language.ru)
 
 

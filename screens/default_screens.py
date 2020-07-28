@@ -6,6 +6,7 @@ import api_requests as ar
 from localization import Localization, Language
 
 
+# TODO: Про localization уже поговорили в файлах app.py и localization.py
 localization = Localization(Language.ru)
 
 
@@ -51,6 +52,7 @@ def set_start_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     bot.reply_to(user.message, localization.greeting, reply_markup=keyboard)
 
 
+# TODO: choosed -> chosen ...
 def get_choosed_company(users_db, user: UserInfo) -> list:
     companies = ar.get_companies_list(user.uid)
 

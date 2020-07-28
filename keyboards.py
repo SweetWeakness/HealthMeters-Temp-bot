@@ -2,12 +2,20 @@ import telebot
 from localization import Localization, Language
 
 
+# TODO: Про localization уже поговорили в файлах app.py и localization.py
 localization = Localization(Language.ru)
 
 
 def get_admin_keyboard():
     keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
 
+    # TODO: А почему бы не использовать тупо массив :-) ?
+    #  зачем овердохера переменных :-) ?
+    #  некрасиво же )))
+
+    # TODO: вообще я бы тупо создал функцию, которая принимает массив кнопок, и возвращает keyboard,
+    #  ведь у тебя опять вознимает копипаста. Тут стоит поступить так же как и в api_requests.py,
+    #  а именно – разделить подготовку данных и их обработку.
     button1 = telebot.types.KeyboardButton(text=localization.add_employee)
     button2 = telebot.types.KeyboardButton(text=localization.delete_employee)
 

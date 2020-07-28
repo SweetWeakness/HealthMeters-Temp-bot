@@ -1,6 +1,7 @@
 telebot
 Flask==1.1.2
-pyTelegramBotAPI==3.7.1
-requests==2.7.0
-redis==3.5.2
-gunicorn== 19.9.0
+pyTelegramBotAPI==3.7.2
+requests==2.24.0
+redis==3.5.3
+gunicorn==20.0.4
+configparser==5.0.0

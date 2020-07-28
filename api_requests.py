@@ -3,17 +3,22 @@ import configparser
 
 
 config = configparser.ConfigParser()
-config.read("config.ini")
+# TODO: Создать интерфейс взаимодействия с конфиг-файлом, тогда "./config.ini" вынесется в статическую
+#  константу, и вся логика по получению значений из конфига будет инкапсулирована.
+config.read("./config.ini")
 
 server_url = config["release"]["server_url"]
 
 
+# TODO: Стоит написать общую функцию send_request(url, data) -> json, которая делает запрос к серверу
+#  и возвращает распаршеный json, а в случае ошибки - throw-ит requests.exceptions.RequestException.
 def get_companies_list(uid: int) -> list:
     try:
         res = requests.post(server_url + "/companies", data={
             "telegram_id": uid,
         })
 
+    # TODO: Ошибки стоит ловить в родительском блоке.
     except requests.exceptions.RequestException:
         return []
 
