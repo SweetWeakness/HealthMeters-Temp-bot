@@ -1,7 +1,5 @@
 from enum import IntFlag
 
-# TODO: Ну тут просто глобально поплыли индексы, стоит все пофиксить и начать индексацию с нуля
-
 
 class ManagerStage(IntFlag):
     CHOOSING_OPTION = 1
@@ -19,6 +17,6 @@ class WorkerStage(IntFlag):
 
 
 class Role(IntFlag):
-    MANAGER = 2
-    WORKER = 3
-    NOBODY = 4
+    MANAGER = 1
+    WORKER = 2
+    NOBODY = 3

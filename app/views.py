@@ -1,17 +1,14 @@
-import os
 import telebot
-from flask import Flask, request
-import configparser
+import requests
+from flask import request
 
-import database as db
-import api_requests as ar
-from screens import worker_screens as ws, manager_screens as ms, default_screens as ds
-from localization import Localization, Language
+from app import server
+from app.databases import redis_database as db
+from app import api_requests as ar
+from app.config import config_manager as cfg
+from app.screens import manager_screens as ms, default_screens as ds, worker_screens as ws
+from app.localizations.localization import Localization, Language
 
-
-config = configparser.ConfigParser()
-config.read("config.ini")
-conf_state = "debug"
 
 # TODO: Локаль предлагаю устанавливать не глобально, а для каждого пользователя.
 #  хранить ее можно например в какой-нибудь мапе внутри Localization.
@@ -25,19 +22,21 @@ conf_state = "debug"
 localization = Localization(Language.ru)
 
 
-TOKEN = config["release"]["token"]
-webhook_url = "%s/%s" % (config[conf_state]["webhook_url"], TOKEN)
-
+TOKEN = cfg.get_token()
 bot = telebot.TeleBot(TOKEN)
-server = Flask(__name__)
-users_db = db.SessionsStorage(conf_state)
+webhook_url = cfg.get_webhook_url()
+users_db = db.UserStorage()
 
 
 @bot.message_handler(commands=["start"])
 def start(message: telebot.types.Message) -> None:
     uid = message.from_user.id
 
-    companies = ar.get_companies_list(uid)
+    try:
+        companies = ar.get_companies_list(uid)
+    except requests.exceptions.RequestException:
+        bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
+        return
 
     if len(companies) > 0:
         user_info = ds.UserInfo(message=message, users_db=users_db)
@@ -45,7 +44,12 @@ def start(message: telebot.types.Message) -> None:
         #  Тут как раз и стоит сетапить контекст 'роль/компания' пользователя,
         #  то есть пользователь в будущем сможет выбирать глобально с данными какой компании
         #  он взаимодействует в данный момент.
-        role = ar.get_role(uid, companies[0]["guid"])
+        try:
+            role = ar.get_role(uid, companies[0]["guid"])
+        except requests.exceptions.RequestException:
+            bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
+            return
+
         user_info.set_role(role)
 
         ds.set_start_screen(bot, users_db, user_info)
@@ -55,7 +59,7 @@ def start(message: telebot.types.Message) -> None:
 
 
 @bot.message_handler(content_types=["text"])
-def text_handler(message: telebot.types.Message):
+def text_handler(message: telebot.types.Message) -> None:
     user_info = ds.UserInfo(message=message, users_db=users_db)
 
     if user_info.role == "Role.WORKER":
@@ -76,7 +80,7 @@ def text_handler(message: telebot.types.Message):
             ws.set_accept_photo_screen(bot, users_db, user_info)
 
         elif user_info.stage == "WorkerStage.GET_COMPANY":
-            receiving_companies = ds.get_choosed_company(users_db, user_info)
+            receiving_companies = ds.get_chosen_company(users_db, user_info)
             user_info.set_companies(receiving_companies)
 
             ws.set_worker_send_screen(bot, users_db, user_info)
@@ -89,13 +93,13 @@ def text_handler(message: telebot.types.Message):
             ms.set_choosing_option_screen(bot, users_db, user_info)
 
         elif user_info.stage == "ManagerStage.GET_INFO":
-            receiving_companies = ds.get_choosed_company(users_db, user_info)
+            receiving_companies = ds.get_chosen_company(users_db, user_info)
             user_info.set_companies(receiving_companies)
 
             ms.set_manager_info_screen(bot, users_db, user_info)
 
         elif user_info.stage == "ManagerStage.ASK_TEMP":
-            receiving_companies = ds.get_choosed_company(users_db, user_info)
+            receiving_companies = ds.get_chosen_company(users_db, user_info)
             user_info.set_companies(receiving_companies)
 
             ms.set_manager_temp_screen(bot, users_db, user_info)
@@ -105,7 +109,7 @@ def text_handler(message: telebot.types.Message):
 
 
 @bot.message_handler(content_types=["photo"])
-def photo_handler(message):
+def photo_handler(message: telebot.types.Message) -> None:
     user_info = ds.UserInfo(message=message, users_db=users_db)
 
     if user_info.role == "Role.WORKER":
@@ -128,7 +132,7 @@ def photo_handler(message):
 
 @bot.message_handler(content_types=["audio", "document", "sticker", "video",
                                     "video_note", "voice", "location", "contact"])
-def other_types_handler(message):
+def other_types_handler(message: telebot.types.Message) -> None:
     user_info = ds.UserInfo(message=message, users_db=users_db)
 
     if user_info.role == "Role.WORKER" or user_info.role == "Role.MANAGER":
@@ -146,18 +150,17 @@ def other_types_handler(message):
 @server.route("/" + TOKEN, methods=["POST"])
 def get_message():
     bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
-    # TODO: А почему возвращаем восклицательный знак 0.0 ?
-    return "!", 200
+    return "bot got new update", 200
 
 
 @server.route("/")
 def webhook():
+    print(123)
     print("webhook's url was: {}\n".format(bot.get_webhook_info().url))
     bot.remove_webhook()
     bot.set_webhook(url=webhook_url)
     print("now webhook's url is: {}\n".format(bot.get_webhook_info().url))
-    # TODO: А почему возвращаем восклицательный знак 0.0 ?
-    return "!", 200
+    return "webhook was changed", 200
 
 
 @server.route("/telegram_schedule", methods=['POST'])
@@ -174,9 +177,3 @@ def get_telegram_schedule():
 
     else:
         return "failed to get list of telegram_id", 404
-
-
-if __name__ == "__main__":
-    print("webhook's url is: {}\n".format(bot.get_webhook_info().url))
-    # TODO: Стоит вынести в конфиг адрес и порт.
-    server.run(threaded=True, host="127.0.0.1", port=int(os.environ.get("PORT", 80)))
