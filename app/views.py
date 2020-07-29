@@ -187,7 +187,7 @@ def get_telegram_schedule():
         return "failed to get list of telegram_id", 404
 
 
-@server.route("/temp_endpoint", methods=['POST'])
+@server.route("/new_employees", methods=['POST'])
 def synchronize():
     res = request.get_json()
     if "data" in res:
