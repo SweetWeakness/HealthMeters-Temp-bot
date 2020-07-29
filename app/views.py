@@ -190,14 +190,10 @@ def get_telegram_schedule():
 @server.route("/new_employees", methods=['POST'])
 def synchronize():
     res = request.get_json()
-    if "data" in res:
-        ans = api_db.set_waiting_workers(res["data"])
-        if "employees" in ans:
-            try:
-                ar.send_request("/get_employee_tg_id", ans)
-            except:
-                print("Бэк не врубили")
 
+    if "data" in res and "delete" in res:
+        api_db.set_waiting_workers(res["data"])
+        api_db.delete_waiting_workers(res["delete"])
         return {"status": "ok"}, 200
 
     else:
