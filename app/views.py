@@ -2,6 +2,7 @@ import telebot
 import requests
 from flask import request
 
+from app.databases import api_db
 from app import server
 from app.databases import redis_database as db
 from app import api_requests as ar
@@ -31,6 +32,13 @@ users_db = db.UserStorage()
 @bot.message_handler(commands=["start"])
 def start(message: telebot.types.Message) -> None:
     uid = message.from_user.id
+
+    ans = api_db.set_worker_id(message.from_user.username, uid)
+    if "employees" in ans:
+        try:
+            ar.send_request("/get_employee_tg_id", ans)
+        except:
+            print("Бэк не врубили")
 
     try:
         companies = ar.get_companies_list(uid)
@@ -177,3 +185,20 @@ def get_telegram_schedule():
 
     else:
         return "failed to get list of telegram_id", 404
+
+
+@server.route("/temp_endpoint", methods=['POST'])
+def synchronize():
+    res = request.get_json()
+    if "data" in res:
+        ans = api_db.set_waiting_workers(res["data"])
+        if "employees" in ans:
+            try:
+                ar.send_request("/get_employee_tg_id", ans)
+            except:
+                print("Бэк не врубили")
+
+        return {"status": "ok"}, 200
+
+    else:
+        return "failed to get list of workers", 404
