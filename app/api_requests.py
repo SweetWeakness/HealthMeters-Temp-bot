@@ -1,4 +1,5 @@
 import requests
+import json
 
 from app.config import config_manager as cfg
 
@@ -6,8 +7,12 @@ server_url = cfg.get_backend_url()
 
 
 def send_request(endpoint: str, data: dict) -> dict:
-    respond = requests.post(server_url + endpoint, data=data)
-    return respond.json()
+    body = json.dumps(data)
+    headers = {
+        'content-type': "application/json",
+    }
+    response = requests.post(server_url + endpoint, headers=headers, data=body)
+    return response.json()
 
 
 def get_companies_list(uid: int) -> list:

@@ -41,9 +41,7 @@ def manager_stats_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> Non
         temp_stats = get_temp_stats(user.uid, companies)
 
         bot.send_message(user.uid, temp_stats, parse_mode="markdown")
-
-        reply_mes = None
-        keyboard = None
+        return
 
     elif len(companies) > 1:
         users_db.set_stage(user.uid, st.ManagerStage.GET_INFO)

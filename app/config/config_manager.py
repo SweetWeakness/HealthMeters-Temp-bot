@@ -13,7 +13,7 @@ def get_token() -> str:
 
 
 def get_backend_url() -> str:
-    return config["release"]["backend_url"]
+    return config[config_state]["backend_url"]
 
 
 def get_webhook_url() -> str:
