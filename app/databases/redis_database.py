@@ -1,4 +1,5 @@
 import redis
+from datetime import datetime
 
 from app.config import config_manager as cfg
 
@@ -41,3 +42,12 @@ class UserStorage:
 
     def get_data(self, uid: int) -> str:
         return self.db.get(str(uid) + "_data")
+
+    # Date of last measuring:
+
+    def set_last_date(self, uid: int) -> None:
+        current_date = datetime.today().strftime("%d.%m")
+        self.db.set(str(uid) + "_last_date", str(current_date))
+
+    def get_last_date(self, uid: int) -> str:
+        return self.db.get(str(uid) + "_last_date")

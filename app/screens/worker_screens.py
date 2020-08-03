@@ -81,14 +81,25 @@ def set_accept_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
         keyboard = keyboards.get_empty_keyboard()
 
     elif user.message.text == localization.accept:
-        companies = ar.get_companies_list(user.uid)
+        try:
+            companies = ar.get_companies_list(user.uid)
+        except:
+            print("бек не врубили")
+            bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
+            return
 
         if len(companies) == 1:
             new_stage = st.WorkerStage.GET_TEMP
             reply_mes = localization.accept_photo
             keyboard = keyboards.get_employee_keyboard()
 
-            ar.add_health_data(user.uid, companies[0]["guid"], users_db.get_data(user.uid))
+            try:
+                ar.add_health_data(user.uid, companies[0]["guid"], users_db.get_data(user.uid))
+                users_db.set_last_date(user.uid)
+            except:
+                print("бек не врубили")
+                bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
+                return
 
         elif len(companies) > 1:
             new_stage = st.WorkerStage.GET_COMPANY
@@ -114,7 +125,13 @@ def set_worker_send_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> No
         keyboard = keyboards.get_employee_keyboard()
 
         for company in user.companies:
-            ar.add_health_data(user.uid, company["guid"], users_db.get_data(user.uid))
+            try:
+                ar.add_health_data(user.uid, company["guid"], users_db.get_data(user.uid))
+                users_db.set_last_date(user.uid)
+            except:
+                print("бек не врубили")
+                bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
+                return
 
     else:
         bot.reply_to(user.message, localization.missing_reply)
