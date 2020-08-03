@@ -15,27 +15,81 @@ def pretty_date(ugly_date) -> str:
     return date.strftime("%d.%m %H:%M")
 
 
+def get_key_from_stats(worker_stats: dict) -> float:
+    if "date" in worker_stats:
+        measure_date = datetime.utcfromtimestamp(worker_stats["date"]).strftime("%d.%m")
+        current_date = datetime.today().strftime("%d.%m")
+        if current_date == measure_date:
+            return worker_stats["last_temp"]
+        else:
+            return 0.
+    else:
+        return 0.
+
+
 def get_temp_stats(manager_uid: int, companies_list: list) -> str:
     ans = ""
 
     for company in companies_list:
         workers_stats = ar.get_workers_stats(manager_uid, company["guid"])
+        workers_stats = sorted(workers_stats, key=get_key_from_stats, reverse=True)
+
+        first_block = []
+        second_block = []
+        third_block = []
+
         for stat in workers_stats:
-            ans += "_%s_" % (stat["initials"])
-            if "date" in stat:
-                ans += "  *%s*  %s" % (str(stat["last_temp"]), pretty_date(stat["date"]))
+            if stat["last_temp"] is not None:
+                measure_date = datetime.utcfromtimestamp(stat["date"]).strftime("%d.%m")
+                current_date = datetime.today().strftime("%d.%m")
+                if current_date == measure_date:
+                    if stat["last_temp"] >= 37:
+                        first_block.append(stat)
+                    else:
+                        second_block.append(stat)
+                else:
+                    third_block.append(stat)
             else:
-                ans += " *-*"
+                third_block.append(stat)
+
+        if len(first_block) != 0:
+            ans += "Измерили, есть температура:\n"
+            for stat in first_block:
+                ans += "_%s_\t\t*%s*\t\t%s\n" % (stat["initials"], str(stat["last_temp"]), pretty_date(stat["date"]))
+            ans += "\n"
+
+        if len(second_block) != 0:
+            ans += "Измерили, температура отсутствует:\n"
+            for stat in second_block:
+                ans += "_%s_\t\t*%s*\t\t%s\n" % (stat["initials"], str(stat["last_temp"]), pretty_date(stat["date"]))
+            ans += "\n"
+
+        if len(third_block) != 0:
+            ans += "Не измеряли:\n"
+            for stat in third_block:
+                ans += "_%s_" % (stat["initials"])
+                if "date" in stat:
+                    ans += "\t\t*%s*\t\tпоследний замер\t\t%s\n" % (str(stat["last_temp"]), pretty_date(stat["date"]))
+                else:
+                    ans += "\t\tданные отсутсвуют (нет измерений)\n"
 
             ans += "\n"
 
-    ans += "\n\n%s %s." % (localization.stats_message, datetime.now().strftime('%d.%m.%Y %H:%M'))
+    if ans == "":
+        return "У вас нет прикрепленных сотрудников."
+
+    ans += "%s\t\t%s." % (localization.stats_message, datetime.now().strftime('%d.%m.%Y %H:%M'))
 
     return ans
 
 
 def manager_stats_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    companies = ar.get_companies_list(user.uid)
+    try:
+        companies = ar.get_companies_list(user.uid)
+    except:
+        print("бек не врубили")
+        bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
+        return
 
     if len(companies) == 1:
         temp_stats = get_temp_stats(user.uid, companies)
@@ -57,15 +111,26 @@ def manager_stats_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> Non
 
 
 def manager_temp_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    companies = ar.get_companies_list(user.uid)
+    try:
+        companies = ar.get_companies_list(user.uid)
+    except:
+        print("бек не врубили")
+        bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
+        return
 
     if len(companies) == 1:
-        workers_list = ar.get_attached_workers(user.uid, companies[0]["guid"])
+        try:
+            workers_list = ar.get_attached_workers(user.uid, companies[0]["guid"])
+        except:
+            print("бек не врубили")
+            bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
+            return
+        
         for worker in workers_list:
             try:
                 bot.send_message(worker["telegram_id"], localization.manager_ask_measure)
             except telebot.apihelper.ApiException:
-                print("не зарегался {}".format(worker["telegram_id"]))
+                print("Попытка отправить на несуществующий tg_id {}".format(worker["telegram_id"]))
 
         reply_mes = localization.asked_measure
         keyboard = None
@@ -117,12 +182,18 @@ def set_manager_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
         keyboard = keyboards.get_manager_keyboard()
 
         for company in user.companies:
-            workers_list = ar.get_attached_workers(user.uid, company["guid"])
+            try:
+                workers_list = ar.get_attached_workers(user.uid, company["guid"])
+            except:
+                print("бек не врубили")
+                bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
+                return
+            
             for worker in workers_list:
                 try:
                     bot.send_message(worker["telegram_id"], localization.manager_ask_measure)
                 except telebot.apihelper.ApiException:
-                    print("не зарегался {}".format(worker["telegram_id"]))
+                    print("Попытка отправить на несуществующий tg_id {}".format(worker["telegram_id"]))
 
         users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
 

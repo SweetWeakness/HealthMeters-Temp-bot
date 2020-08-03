@@ -37,12 +37,13 @@ def start(message: telebot.types.Message) -> None:
     if "employees" in ans:
         try:
             ar.send_request("/get_employee_tg_id", ans)
+            api_db.confirm_deletion(message.from_user.username)
         except:
             print("Бэк не врубили")
 
     try:
         companies = ar.get_companies_list(uid)
-    except requests.exceptions.RequestException:
+    except:
         bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
         return
 
@@ -88,7 +89,13 @@ def text_handler(message: telebot.types.Message) -> None:
             ws.set_accept_photo_screen(bot, users_db, user_info)
 
         elif user_info.stage == "WorkerStage.GET_COMPANY":
-            receiving_companies = ds.get_chosen_company(users_db, user_info)
+            try:
+                receiving_companies = ds.get_chosen_company(users_db, user_info)
+            except:
+                print("бек не врубили")
+                bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
+                return
+
             user_info.set_companies(receiving_companies)
 
             ws.set_worker_send_screen(bot, users_db, user_info)
@@ -101,13 +108,25 @@ def text_handler(message: telebot.types.Message) -> None:
             ms.set_choosing_option_screen(bot, users_db, user_info)
 
         elif user_info.stage == "ManagerStage.GET_INFO":
-            receiving_companies = ds.get_chosen_company(users_db, user_info)
+            try:
+                receiving_companies = ds.get_chosen_company(users_db, user_info)
+            except:
+                print("бек не врубили")
+                bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
+                return
+
             user_info.set_companies(receiving_companies)
 
             ms.set_manager_info_screen(bot, users_db, user_info)
 
         elif user_info.stage == "ManagerStage.ASK_TEMP":
-            receiving_companies = ds.get_chosen_company(users_db, user_info)
+            try:
+                receiving_companies = ds.get_chosen_company(users_db, user_info)
+            except:
+                print("бек не врубили")
+                bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
+                return
+
             user_info.set_companies(receiving_companies)
 
             ms.set_manager_temp_screen(bot, users_db, user_info)

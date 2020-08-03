@@ -12,7 +12,7 @@ def set_waiting_workers(guid_username_list: list):
             db.session.add(User(guid=worker["guid"], username=worker["nickname"]))
 
     db.session.commit()
-    print("bd changed (added)")
+    print("db changed (added)")
 
 
 def set_worker_id(username: str, telegram_id: int):
@@ -20,11 +20,10 @@ def set_worker_id(username: str, telegram_id: int):
 
     if worker is not None:
         ans = {"employees": {worker.guid: telegram_id}}
-        db.session.delete(worker)
     else:
         ans = {}
 
-    print("bd changed (deleted pending worker)")
+    print("db changed (found tg_id)")
     db.session.commit()
     return ans
 
@@ -37,4 +36,11 @@ def delete_waiting_workers(guid_username_list: list):
             db.session.delete(worker_model)
 
     db.session.commit()
-    print("bd changed (deleted)")
+    print("db changed (deleted)")
+
+
+def confirm_deletion(username: int):
+    worker = User.query.filter_by(username=username).first()
+    db.session.delete(worker)
+    db.session.commit()
+    print("db changed (backend got id, deleted in db)")
