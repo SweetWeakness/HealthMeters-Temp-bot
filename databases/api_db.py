@@ -1,5 +1,5 @@
 from app import db
-from app.databases.models import User
+from databases.models import User
 
 
 def set_waiting_workers(guid_username_list: list):

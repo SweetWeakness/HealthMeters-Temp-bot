@@ -2,14 +2,23 @@ import telebot
 import requests
 from flask import request
 
-from app.databases import api_db
-from app import server
-from app.databases import redis_database as db
-from app import api_requests as ar
-from app.config import config_manager as cfg
-from app.screens import manager_screens as ms, default_screens as ds, worker_screens as ws
-from app.localizations.localization import Localization, Language
+from databases import redis_database
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+import api_requests as ar
+from config import config_manager as cfg
+from screens import manager_screens as ms, worker_screens as ws, default_screens as ds
+from localizations.localization import Localization, Language
 
+
+server = Flask(__name__)
+server.config['SQLALCHEMY_DATABASE_URI'] = cfg.get_postgresql_url()
+server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+server_host = cfg.get_server_host()
+server_port = cfg.get_server_port()
+db = SQLAlchemy(server)
+
+from databases import api_db
 
 # TODO: Локаль предлагаю устанавливать не глобально, а для каждого пользователя.
 #  хранить ее можно например в какой-нибудь мапе внутри Localization.
@@ -26,7 +35,7 @@ localization = Localization(Language.ru)
 TOKEN = cfg.get_token()
 bot = telebot.TeleBot(TOKEN)
 webhook_url = cfg.get_webhook_url()
-users_db = db.UserStorage()
+users_db = redis_database.UserStorage()
 
 
 @bot.message_handler(commands=["start"])
@@ -182,7 +191,6 @@ def get_message():
 
 @server.route("/")
 def webhook():
-    print(123)
     print("webhook's url was: {}\n".format(bot.get_webhook_info().url))
     bot.remove_webhook()
     bot.set_webhook(url=webhook_url)
@@ -217,3 +225,7 @@ def synchronize():
 
     else:
         return "failed to get list of workers", 404
+
+
+if __name__ == "__main__":
+    server.run(threaded=True, host=server_host, port=server_port)

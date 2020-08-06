@@ -1,7 +1,7 @@
 import requests
 import json
 
-from app.config import config_manager as cfg
+from config import config_manager as cfg
 
 server_url = cfg.get_backend_url()
 

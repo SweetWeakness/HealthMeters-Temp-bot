@@ -1,8 +1,8 @@
 import telebot
-from app.localizations.localization import Localization, Language
+from localizations.localization import Localization, Language
 
 
-# TODO: Про localization уже поговорили в файлах views.py и localization.py
+# TODO: Про localization уже поговорили в файлах app.py и localization.py
 localization = Localization(Language.ru)
 
 

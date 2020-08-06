@@ -1,7 +1,7 @@
 import configparser
 
 
-config_path = "./app/config/config.ini"
+config_path = "./config/config.ini"
 
 config = configparser.ConfigParser()
 config.read(config_path)

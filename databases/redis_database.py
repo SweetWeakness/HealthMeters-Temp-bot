@@ -1,7 +1,7 @@
 import redis
 from datetime import datetime
 
-from app.config import config_manager as cfg
+from config import config_manager as cfg
 
 redis_url = cfg.get_redis_url()
 db_index = cfg.get_db_index()

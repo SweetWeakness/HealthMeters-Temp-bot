@@ -1,6 +1,6 @@
 import enum
 
-from app.localizations import russian
+from localizations import russian
 
 localization = {
     "ru_RU": russian.ru
@@ -17,7 +17,7 @@ class Localization:
         self.language = language.value
 
     @property
-    # TODO: Итак, надеюсь ты пришел сюда из views.py, если нет – посмотри сначала TODO-шки в нем.
+    # TODO: Итак, надеюсь ты пришел сюда из app.py, если нет – посмотри сначала TODO-шки в нем.
     #  Собственно, эта функция (уже не property) принимает uid.
     #  Далее, стоит создать функицю getLocale, которая принимает uid и возвращает Locale.
     #  Получается, пишем так: localization[self.getLocale(uid)]["add_employee"].

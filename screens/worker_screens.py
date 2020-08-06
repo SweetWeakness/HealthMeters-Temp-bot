@@ -1,11 +1,13 @@
 import telebot
 
-from app import keyboards, stages as st, api_requests as ar
-from app.screens.default_screens import UserInfo
-from app.localizations.localization import Localization, Language
+import api_requests as ar
+import stages as st
+import keyboards
+from screens.default_screens import UserInfo
+from localizations.localization import Localization, Language
 
 
-# TODO: Про localization уже поговорили в файлах views.py и localization.py
+# TODO: Про localization уже поговорили в файлах app.py и localization.py
 localization = Localization(Language.ru)
 
 
