@@ -140,6 +140,15 @@ def text_handler(message: telebot.types.Message) -> None:
 
             ms.set_manager_temp_screen(bot, users_db, user_info)
 
+        elif user_info.stage == "ManagerStage.GET_STAT":
+            ms.set_stat_type_screen(bot, users_db, user_info)
+
+        elif user_info.stage == "ManagerStage.ASK_MEASURE":
+            ms.set_ask_measure_screen(bot, users_db, user_info)
+
+        elif user_info.stage == "ManagerStage.GET_EMAIL":
+            ms.set_get_email_screen(bot, users_db, user_info)
+
     else:
         bot.reply_to(message, localization.system_access_error)
 
@@ -206,16 +215,16 @@ def get_telegram_schedule():
             try:
                 bot.send_message(telegram_id, localization.manager_ask_measure)
             except telebot.apihelper.ApiException:
-                print("не зарегался {}".format(telegram_id))
+                print("Попытка отправить на несуществующий tg_id {}".format(telegram_id))
 
         return {"status": "ok"}, 200
 
     else:
-        return "failed to get list of telegram_id", 404
+        return {"status": "failed to get list of telegram_id"}, 404
 
 
 @server.route("/new_employees", methods=['POST'])
-def synchronize():
+def get_new_employees():
     res = request.get_json()
 
     if "data" in res and "delete" in res:

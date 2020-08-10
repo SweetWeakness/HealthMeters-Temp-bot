@@ -43,6 +43,9 @@ class UserStorage:
     def get_data(self, uid: int) -> str:
         return self.db.get(str(uid) + "_data")
 
+    def data_exist(self, uid: int) -> bool:
+        return self.db.exists(str(uid) + "_data")
+
     # Date of last measuring:
 
     def set_last_date(self, uid: int) -> None:

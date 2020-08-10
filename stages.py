@@ -3,8 +3,11 @@ from enum import IntFlag
 
 class ManagerStage(IntFlag):
     CHOOSING_OPTION = 1
-    GET_INFO = 2
-    ASK_TEMP = 3
+    GET_INFO = 2  # choosing companies for stats
+    ASK_TEMP = 3  # choosing companies for asking measurement
+    GET_STAT = 4
+    ASK_MEASURE = 5
+    GET_EMAIL = 6
 
 
 class WorkerStage(IntFlag):

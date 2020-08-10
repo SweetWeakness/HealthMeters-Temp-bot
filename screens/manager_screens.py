@@ -29,8 +29,9 @@ def get_key_from_stats(worker_stats: dict) -> float:
         return 0.
 
 
-def get_temp_stats(manager_uid: int, companies_list: list) -> str:
+def get_temp_stats(manager_uid: int, companies_list: list) -> list:
     ans = ""
+    flg = False
 
     for company in companies_list:
         workers_stats = ar.get_workers_stats(manager_uid, company["guid"])
@@ -58,7 +59,7 @@ def get_temp_stats(manager_uid: int, companies_list: list) -> str:
             ans += "Измерили, есть температура:\n"
             for stat in first_block:
                 ans += "_%s_\t\t*%s*\t\t%s\n" % (stat["initials"], str(stat["last_temp"]), pretty_date(stat["date"]))
-            ans += "\n"
+            ans += "\\_" * 30 + "\n\n"
 
         if len(second_block) != 0:
             ans += "Измерили, температура отсутствует:\n"
@@ -67,6 +68,7 @@ def get_temp_stats(manager_uid: int, companies_list: list) -> str:
             ans += "\n"
 
         if len(third_block) != 0:
+            flg = True
             ans += "Не измеряли:\n"
             for stat in third_block:
                 ans += "_%s_" % (stat["initials"])
@@ -78,11 +80,11 @@ def get_temp_stats(manager_uid: int, companies_list: list) -> str:
             ans += "\n"
 
     if ans == "":
-        return "У вас нет прикрепленных сотрудников."
+        return ["У вас нет прикрепленных сотрудников.", False]
 
     ans += "%s\t\t%s." % (localization.stats_message, datetime.now().strftime('%d.%m.%Y %H:%M'))
 
-    return ans
+    return [ans, flg]
 
 
 def manager_stats_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
@@ -95,8 +97,23 @@ def manager_stats_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> Non
 
     if len(companies) == 1:
         temp_stats = get_temp_stats(user.uid, companies)
+        temp_stats_str = temp_stats[0]
+        need_measurement = temp_stats[1]
 
-        bot.send_message(user.uid, temp_stats, parse_mode="markdown")
+        bot.reply_to(user.message, temp_stats_str, parse_mode="markdown")
+
+        if need_measurement:
+            reply_mes = "Запросить измерения у тех, кто не померился?"
+            keyboard = keyboards.get_keyboard(["Да", "Нет"])
+            new_stage = st.ManagerStage.ASK_MEASURE
+
+        else:
+            reply_mes = "Выберите опцию:"
+            keyboard = keyboards.get_manager_keyboard()
+            new_stage = st.ManagerStage.CHOOSING_OPTION
+
+        bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
+        users_db.set_stage(user.uid, new_stage)
         return
 
     elif len(companies) > 1:
@@ -152,7 +169,8 @@ def manager_temp_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None
 
 def set_choosing_option_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if user.message.text == localization.common_stat:
-        manager_stats_handler(bot, users_db, user)
+        bot.reply_to(user.message, "Как вам вывести статистику?\nВыберите опцию:", reply_markup=keyboards.get_stat_types_keyboard())
+        users_db.set_stage(user.uid, st.ManagerStage.GET_STAT)
 
     elif user.message.text == localization.ask_measure:
         manager_temp_handler(bot, users_db, user)
@@ -163,19 +181,28 @@ def set_choosing_option_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
 
 def set_manager_info_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if len(user.companies) > 0:
-        reply_mes = localization.made_stats
-        keyboard = keyboards.get_manager_keyboard()
-
         temp_stats = get_temp_stats(user.uid, user.companies)
+        temp_stats_str = temp_stats[0]
+        need_measurement = temp_stats[1]
 
-        bot.send_message(user.uid, temp_stats)
-        users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
+        bot.reply_to(user.message, temp_stats_str, parse_mode="markdown")
+
+        if need_measurement:
+            reply_mes = "Запросить измерения у тех, кто не померился?"
+            keyboard = keyboards.get_keyboard(["Да", "Нет"])
+            new_stage = st.ManagerStage.ASK_MEASURE
+
+        else:
+            reply_mes = "Выберите опцию:"
+            keyboard = keyboards.get_manager_keyboard()
+            new_stage = st.ManagerStage.CHOOSING_OPTION
+
+        bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
+        users_db.set_stage(user.uid, new_stage)
+        return
 
     else:
         bot.reply_to(user.message, localization.missing_reply)
-        return
-
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
 
 
 def set_manager_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
@@ -204,3 +231,52 @@ def set_manager_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
         return
 
     bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+
+
+def set_stat_type_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+    if user.message.text == "Текстом в чат":
+        manager_stats_handler(bot, users_db, user)
+
+    elif user.message.text == "Файлом в чат":
+        bot.reply_to(user.message, "Запрашиваю статистику.")
+        # TODO запрос статистики и ее вывод
+        bot.send_message(user.uid, "Zdes budet statistika", reply_markup=keyboards.get_manager_keyboard())
+
+        users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
+
+    elif user.message.text == "Файлом на почту":
+        if users_db.data_exist(user.uid):
+            emails = users_db.get_data(user.uid).split()
+            keyboard = keyboards.get_emails_keyboard(emails)
+            reply_mes = "Введите почту или выберите предыдущую:"
+
+        else:
+            keyboard = keyboards.get_empty_keyboard()
+            reply_mes = "Введите почту:"
+
+        bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+        users_db.set_stage(user.uid, st.ManagerStage.GET_EMAIL)
+
+    else:
+        bot.reply_to(user.message, localization.missing_reply)
+
+
+def set_ask_measure_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+    if user.message.text == "Да":
+        # TODO запрос измерения
+        bot.reply_to(user.message, "Запросил измерения у тех, кто не померился", reply_markup=keyboards.get_manager_keyboard())
+        users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
+
+    elif user.message.text == "Нет":
+        bot.reply_to(user.message, "Выберите опцию:", reply_markup=keyboards.get_manager_keyboard())
+        users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
+
+    else:
+        bot.reply_to(user.message, localization.missing_reply)
+
+
+def set_get_email_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+    # TODO отправляем на такую то почту
+    bot.reply_to(user.message, "Собираю статистику и отправляю ее вам на почту...", reply_markup=keyboards.get_manager_keyboard())
+    users_db.set_data(user.uid, user.message.text)
+    users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)

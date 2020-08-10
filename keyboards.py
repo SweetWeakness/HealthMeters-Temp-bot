@@ -31,8 +31,17 @@ def get_accept_keyboard():
     return get_keyboard(buttons_text_list)
 
 
+def get_stat_types_keyboard():
+    buttons_text_list = ["Текстом в чат", "Файлом в чат", "Файлом на почту"]
+    return get_keyboard(buttons_text_list)
+
+
 def get_empty_keyboard():
     return telebot.types.ReplyKeyboardRemove()
+
+
+def get_emails_keyboard(emails_list: list):
+    return get_keyboard(emails_list)
 
 
 def get_companies_keyboard(comp_list: list):
