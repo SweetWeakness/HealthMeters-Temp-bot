@@ -1,4 +1,4 @@
-ru = {
+all_text = {
     "add_employee": "Добавить сотрудника",
     "delete_employee": "Удалить сотрудника",
     "attach_employee": "Прикрепить сотрудника",
