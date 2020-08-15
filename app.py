@@ -89,14 +89,14 @@ def text_handler(message: telebot.types.Message) -> None:
         elif user_info.stage == "WorkerStage.GET_COMPANY":
             try:
                 ds.set_company_context(users_db, user_info)
-                ws.set_worker_send_screen(bot, users_db, user_info)
+                ws.set_getting_company_screen(bot, users_db, user_info)
             except:
                 print("бек не врубили")
                 bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
                 return
 
         elif user_info.stage == "WorkerStage.GET_LANG":
-            ds.get_language(bot, users_db, user_info)
+            ds.set_language_screen(bot, users_db, user_info)
 
         else:
             bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
@@ -133,7 +133,7 @@ def text_handler(message: telebot.types.Message) -> None:
             ms.set_get_email_screen(bot, users_db, user_info)
 
         elif user_info.stage == "ManagerStage.GET_LANG":
-            ds.get_language(bot, users_db, user_info)
+            ds.set_language_screen(bot, users_db, user_info)
 
         else:
             bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))

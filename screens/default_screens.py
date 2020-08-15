@@ -15,34 +15,36 @@ class UserInfo:
         self.role = users_db.get_role(self.uid)
         self.lang = users_db.get_language(self.uid)
 
-    def set_role(self, role):
+    def set_role(self, role) -> None:
         self.role = role
 
-    def set_companies(self, companies):
+    def set_companies(self, companies) -> None:
         self.companies = companies
 
-    def set_language(self, language):
+    def set_language(self, language) -> None:
         self.lang = language
 
 
 def set_start_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if user.role == "worker":
         new_role = st.Role.WORKER
+        new_stage = st.WorkerStage.GET_LANG
 
     elif user.role == "manager":
         new_role = st.Role.MANAGER
+        new_stage = st.ManagerStage.GET_LANG
 
     else:
         bot.reply_to(user.message, lc.translate(user.lang, "access_error"))
         return
 
     users_db.set_role(user.uid, new_role)
-    users_db.set_stage(user.uid, st.ManagerStage.GET_LANG)
+    users_db.set_stage(user.uid, new_stage)
 
     bot.reply_to(user.message, "Choose your language:", reply_markup=keyboards.get_language_keyboard())
 
 
-def get_language(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+def set_language_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if user.role == "Role.MANAGER":
         keyboard = keyboards.get_manager_keyboard(user.lang)
         new_stage = st.ManagerStage.CHOOSING_OPTION
@@ -50,19 +52,20 @@ def get_language(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
         keyboard = keyboards.get_employee_keyboard(user.lang)
         new_stage = st.WorkerStage.GET_TEMP
 
-    if user.message.text == "Русский":
+    if user.message.text == "Русский🇷🇺":
         users_db.set_language(user.uid, "ru")
         user.set_language("ru")
 
-    elif user.message.text == "English":
-        users_db.set_language(user.uid, "en")
+    elif user.message.text == "English🇬🇧":
+        # need english localization
+        users_db.set_language(user.uid, "ru")
         user.set_language("ru")
 
     else:
         bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
         return
 
-    bot.reply_to(user.message, "Здравствуйте! Выберите опцию:", reply_markup=keyboard)
+    bot.reply_to(user.message, lc.translate(user.lang, "greeting"), reply_markup=keyboard)
     users_db.set_stage(user.uid, new_stage)
 
 

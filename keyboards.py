@@ -27,13 +27,14 @@ def get_accept_keyboard(lang: str):
     return get_keyboard(buttons_text_list)
 
 
-def get_back_keyboard():
-    return get_keyboard(["Назад"])
+def get_back_keyboard(lang: str):
+    return get_keyboard([lc.translate(lang, "back")])
 
 
-def get_stat_types_keyboard():
-    b1 = ["Текстом в чат", "Файлом в чат"]
-    b2 = ["Назад", "Файлом на почту"]
+def get_stat_types_keyboard(lang: str):
+    b1 = [lc.translate(lang, "text_in_chat"), lc.translate(lang, "file_in_chat")]
+    b2 = [lc.translate(lang, "back"), lc.translate(lang, "file_on_email")]
+
     keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     keyboard.row(b1[0], b1[1])
     keyboard.row(b2[0], b2[1])
@@ -45,12 +46,16 @@ def get_empty_keyboard():
     return telebot.types.ReplyKeyboardRemove()
 
 
-def get_emails_keyboard(last_email: str):
-    return get_keyboard([last_email, "Назад"])
+def get_emails_keyboard(lang: str, last_email: str):
+    return get_keyboard([last_email, lc.translate(lang, "back")])
+
+
+def get_yes_no_keyboard(lang: str):
+    return get_keyboard([lc.translate(lang, "yes"), lc.translate(lang, "no")])
 
 
 def get_language_keyboard():
-    return get_keyboard(["Русский", "English"])
+    return get_keyboard(["Русский🇷🇺", "English🇬🇧"])
 
 
 def get_companies_keyboard(lang: str, comp_list: list):

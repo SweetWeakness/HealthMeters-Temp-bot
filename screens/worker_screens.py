@@ -18,7 +18,7 @@ def temp_validation(temp: str) -> bool:
 def set_getting_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if user.message.text == lc.translate(user.lang, "measure_temp"):
         reply_mes = lc.translate(user.lang, "insert_temp")
-        keyboard = keyboards.get_back_keyboard()
+        keyboard = keyboards.get_back_keyboard(user.lang)
         new_stage = st.WorkerStage.VALIDATION_TEMP
 
     else:
@@ -41,10 +41,10 @@ def set_validation_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
             users_db.set_data(user.uid, temp)
         else:
             reply_mes = lc.translate(user.lang, "temp_validation")
-            keyboard = keyboards.get_back_keyboard()
+            keyboard = keyboards.get_back_keyboard(user.lang)
 
-    elif temp == "Назад":
-        bot.reply_to(user.message, "Выберите опцию:", reply_markup=keyboards.get_employee_keyboard(user.lang))
+    elif temp == lc.translate(user.lang, "back"):
+        bot.reply_to(user.message, lc.translate(user.lang, "choose_option"), reply_markup=keyboards.get_employee_keyboard(user.lang))
         users_db.set_stage(user.uid, st.WorkerStage.GET_TEMP)
         return
 
@@ -60,7 +60,7 @@ def set_accept_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> No
     if user.message.text == lc.translate(user.lang, "mistake"):
         new_stage = st.WorkerStage.VALIDATION_TEMP
         reply_mes = lc.translate(user.lang, "reinsert_temp")
-        keyboard = keyboards.get_back_keyboard()
+        keyboard = keyboards.get_back_keyboard(user.lang)
 
     elif user.message.text == lc.translate(user.lang, "accept"):
         new_stage = st.WorkerStage.GET_PHOTO
@@ -80,7 +80,7 @@ def set_getting_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> 
         companies = ar.get_companies_list(user.uid)
     except:
         print("бек не врубили")
-        bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
+        bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
         return
 
     if len(companies) == 1:
@@ -92,7 +92,7 @@ def set_getting_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> 
             ar.add_health_data(user.uid, companies[0]["guid"], users_db.get_data(user.uid))
         except:
             print("бек не врубили")
-            bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
+            bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
             return
 
     elif len(companies) > 1:
@@ -121,7 +121,7 @@ def set_accept_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
             companies = ar.get_companies_list(user.uid)
         except:
             print("бек не врубили")
-            bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
+            bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
             return
 
         if len(companies) == 1:
@@ -133,7 +133,7 @@ def set_accept_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
                 ar.add_health_data(user.uid, companies[0]["guid"], users_db.get_data(user.uid))
             except:
                 print("бек не врубили")
-                bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
+                bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
                 return
 
         elif len(companies) > 1:
@@ -155,7 +155,7 @@ def set_accept_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
 """
 
 
-def set_worker_send_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+def set_getting_company_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     comp_context = users_db.get_comp_context(user.uid)
 
     if comp_context != "None":

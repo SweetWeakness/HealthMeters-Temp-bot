@@ -14,7 +14,7 @@ class UserStorage:
 
     # Role:
 
-    def set_role(self, uid: int, role: str) -> None:
+    def set_role(self, uid: int, role) -> None:
         self.db.set(str(uid), str(role))
 
     def get_role(self, uid: int) -> str:
@@ -25,7 +25,7 @@ class UserStorage:
 
     # Stage (bot's menu stage):
 
-    def set_stage(self, uid: int, stage: str) -> None:
+    def set_stage(self, uid: int, stage) -> None:
         self.db.set(str(uid) + "_stage", str(stage))
 
     def get_stage(self, uid: int) -> str:
