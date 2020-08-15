@@ -65,7 +65,8 @@ def set_language_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
         bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
         return
 
-    bot.reply_to(user.message, lc.translate(user.lang, "greeting"), reply_markup=keyboard)
+    bot.reply_to(user.message, lc.translate(user.lang, "accept_lang"), reply_markup=keyboard)
+    bot.send_message(user.uid, lc.translate(user.lang, "greeting"))
     users_db.set_stage(user.uid, new_stage)
 
 
