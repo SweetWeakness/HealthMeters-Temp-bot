@@ -1,5 +1,4 @@
 import redis
-from datetime import datetime
 
 from config import config_manager as cfg
 
@@ -15,7 +14,7 @@ class UserStorage:
 
     # Role:
 
-    def set_role(self, uid: int, role: str) -> None:
+    def set_role(self, uid: int, role) -> None:
         self.db.set(str(uid), str(role))
 
     def get_role(self, uid: int) -> str:
@@ -24,9 +23,9 @@ class UserStorage:
     def role_exist(self, uid: int) -> bool:
         return self.db.exists(str(uid))
 
-    # Stage:
+    # Stage (bot's menu stage):
 
-    def set_stage(self, uid: int, stage: str) -> None:
+    def set_stage(self, uid: int, stage) -> None:
         self.db.set(str(uid) + "_stage", str(stage))
 
     def get_stage(self, uid: int) -> str:
@@ -35,7 +34,7 @@ class UserStorage:
     def stage_exist(self, uid: int) -> bool:
         return self.db.exists(str(uid) + "_stage")
 
-    # Data:
+    # Data (temp/email for worker/manager):
 
     def set_data(self, uid: int, data: str) -> None:
         self.db.set(str(uid) + "_data", str(data))
@@ -43,11 +42,21 @@ class UserStorage:
     def get_data(self, uid: int) -> str:
         return self.db.get(str(uid) + "_data")
 
-    # Date of last measuring:
+    def data_exist(self, uid: int) -> bool:
+        return self.db.exists(str(uid) + "_data")
 
-    def set_last_date(self, uid: int) -> None:
-        current_date = datetime.today().strftime("%d.%m")
-        self.db.set(str(uid) + "_last_date", str(current_date))
+    # Company in context of usage:
 
-    def get_last_date(self, uid: int) -> str:
-        return self.db.get(str(uid) + "_last_date")
+    def set_comp_context(self, uid: int, guid: str) -> None:
+        self.db.set(str(uid) + "_comp_context", str(guid))
+
+    def get_comp_context(self, uid: int) -> str:
+        return self.db.get(str(uid) + "_comp_context")
+
+    # Language:
+
+    def set_language(self, uid: int, lang: str) -> None:
+        self.db.set(str(uid) + "_language", str(lang))
+
+    def get_language(self, uid: int) -> str:
+        return self.db.get(str(uid) + "_language")

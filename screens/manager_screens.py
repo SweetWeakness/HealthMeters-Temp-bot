@@ -1,88 +1,49 @@
 import telebot
-from datetime import datetime
 
 import api_requests as ar
 import stages as st
 import keyboards
 from screens.default_screens import UserInfo
-from localizations.localization import Localization, Language
+import localizations.localization as lc
+from screens import stat_maker
 
 
-# TODO: Про localization уже поговорили в файлах app.py и localization.py
-localization = Localization(Language.ru)
+def send_stats(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+    temp_stats = stat_maker.get_temp_stats(user.uid, user.companies, user.lang)
+    temp_stats_str = temp_stats[0]
+    need_measurement = temp_stats[1]
 
+    bot.reply_to(user.message, temp_stats_str, parse_mode="markdown")
 
-def pretty_date(ugly_date) -> str:
-    date = datetime.utcfromtimestamp(ugly_date)
-    return date.strftime("%d.%m %H:%M")
+    if need_measurement:
+        reply_mes = lc.translate(user.lang, "ask_measure_for_info")
+        keyboard = keyboards.get_yes_no_keyboard(user.lang)
+        new_stage = st.ManagerStage.ASK_MEASURE
 
-
-def get_key_from_stats(worker_stats: dict) -> float:
-    if "date" in worker_stats:
-        measure_date = datetime.utcfromtimestamp(worker_stats["date"]).strftime("%d.%m")
-        current_date = datetime.today().strftime("%d.%m")
-        if current_date == measure_date:
-            return worker_stats["last_temp"]
-        else:
-            return 0.
     else:
-        return 0.
+        reply_mes = lc.translate(user.lang, "choose_option")
+        keyboard = keyboards.get_manager_keyboard(user.lang)
+        new_stage = st.ManagerStage.CHOOSING_OPTION
+
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
+    users_db.set_stage(user.uid, new_stage)
 
 
-def get_temp_stats(manager_uid: int, companies_list: list) -> str:
-    ans = ""
+def ask_measure(bot: telebot.TeleBot, users_db, user: UserInfo):
+    for company in user.companies:
+        workers_list = ar.get_attached_workers(user.uid, company)
 
-    for company in companies_list:
-        workers_stats = ar.get_workers_stats(manager_uid, company["guid"])
-        workers_stats = sorted(workers_stats, key=get_key_from_stats, reverse=True)
+        for worker in workers_list:
+            try:
+                bot.send_message(worker["telegram_id"], lc.translate(user.lang, "manager_ask_measure"))
+            except telebot.apihelper.ApiException:
+                print("Попытка отправить на несуществующий tg_id {}".format(worker["telegram_id"]))
 
-        first_block = []
-        second_block = []
-        third_block = []
+    reply_mes = lc.translate(user.lang, "asked_measure")
+    keyboard = keyboards.get_manager_keyboard(user.lang)
 
-        for stat in workers_stats:
-            if stat["last_temp"] is not None:
-                measure_date = datetime.utcfromtimestamp(stat["date"]).strftime("%d.%m")
-                current_date = datetime.today().strftime("%d.%m")
-                if current_date == measure_date:
-                    if stat["last_temp"] >= 37:
-                        first_block.append(stat)
-                    else:
-                        second_block.append(stat)
-                else:
-                    third_block.append(stat)
-            else:
-                third_block.append(stat)
-
-        if len(first_block) != 0:
-            ans += "Измерили, есть температура:\n"
-            for stat in first_block:
-                ans += "_%s_\t\t*%s*\t\t%s\n" % (stat["initials"], str(stat["last_temp"]), pretty_date(stat["date"]))
-            ans += "\n"
-
-        if len(second_block) != 0:
-            ans += "Измерили, температура отсутствует:\n"
-            for stat in second_block:
-                ans += "_%s_\t\t*%s*\t\t%s\n" % (stat["initials"], str(stat["last_temp"]), pretty_date(stat["date"]))
-            ans += "\n"
-
-        if len(third_block) != 0:
-            ans += "Не измеряли:\n"
-            for stat in third_block:
-                ans += "_%s_" % (stat["initials"])
-                if "date" in stat:
-                    ans += "\t\t*%s*\t\tпоследний замер\t\t%s\n" % (str(stat["last_temp"]), pretty_date(stat["date"]))
-                else:
-                    ans += "\t\tданные отсутсвуют (нет измерений)\n"
-
-            ans += "\n"
-
-    if ans == "":
-        return "У вас нет прикрепленных сотрудников."
-
-    ans += "%s\t\t%s." % (localization.stats_message, datetime.now().strftime('%d.%m.%Y %H:%M'))
-
-    return ans
+    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
 
 
 def manager_stats_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
@@ -90,23 +51,22 @@ def manager_stats_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> Non
         companies = ar.get_companies_list(user.uid)
     except:
         print("бек не врубили")
-        bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
+        bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
         return
 
     if len(companies) == 1:
-        temp_stats = get_temp_stats(user.uid, companies)
-
-        bot.send_message(user.uid, temp_stats, parse_mode="markdown")
+        user.set_companies([companies[0]["guid"]])
+        send_stats(bot, users_db, user)
         return
 
     elif len(companies) > 1:
-        users_db.set_stage(user.uid, st.ManagerStage.GET_INFO)
-        reply_mes = localization.choose_company_stats
-        keyboard = keyboards.get_companies_keyboard(companies)
+        users_db.set_stage(user.uid, st.ManagerStage.MULTICOMPANY_STATS)
+        reply_mes = lc.translate(user.lang, "choose_company_stats")
+        keyboard = keyboards.get_companies_keyboard(user.lang, companies)
 
     else:
         users_db.set_role(user.uid, st.Role.NOBODY)
-        reply_mes = localization.access_error
+        reply_mes = lc.translate(user.lang, "access_error")
         keyboard = keyboards.get_empty_keyboard()
 
     bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
@@ -117,90 +77,128 @@ def manager_temp_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None
         companies = ar.get_companies_list(user.uid)
     except:
         print("бек не врубили")
-        bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
+        bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
         return
 
     if len(companies) == 1:
+        user.set_companies([companies[0]["guid"]])
+
         try:
-            workers_list = ar.get_attached_workers(user.uid, companies[0]["guid"])
+            ask_measure(bot, users_db, user)
         except:
             print("бек не врубили")
-            bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
-            return
-        
-        for worker in workers_list:
-            try:
-                bot.send_message(worker["telegram_id"], localization.manager_ask_measure)
-            except telebot.apihelper.ApiException:
-                print("Попытка отправить на несуществующий tg_id {}".format(worker["telegram_id"]))
+            bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
 
-        reply_mes = localization.asked_measure
-        keyboard = None
+        return
 
     elif len(companies) > 1:
-        users_db.set_stage(user.uid, st.ManagerStage.ASK_TEMP)
-        reply_mes = localization.choose_company_measure
-        keyboard = keyboards.get_companies_keyboard(companies)
+        users_db.set_stage(user.uid, st.ManagerStage.MULTICOMPANY_MEASURE)
+        reply_mes = lc.translate(user.lang, "choose_company_measure")
+        keyboard = keyboards.get_companies_keyboard(user.lang, companies)
 
     else:
         users_db.set_role(user.uid, st.Role.NOBODY)
-        reply_mes = localization.access_error
+        reply_mes = lc.translate(user.lang, "access_error")
         keyboard = keyboards.get_empty_keyboard()
 
     bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
 
 
 def set_choosing_option_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    if user.message.text == localization.common_stat:
-        manager_stats_handler(bot, users_db, user)
+    if user.message.text == lc.translate(user.lang, "common_stat"):
+        reply_mes = lc.translate(user.lang, "get_stat_type")
+        keyboard = keyboards.get_stat_types_keyboard(user.lang)
+        bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
 
-    elif user.message.text == localization.ask_measure:
+        users_db.set_stage(user.uid, st.ManagerStage.GET_STAT_TYPE)
+
+    elif user.message.text == lc.translate(user.lang, "ask_measure"):
         manager_temp_handler(bot, users_db, user)
 
     else:
-        bot.reply_to(user.message, localization.missing_reply)
+        bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
 
 
-def set_manager_info_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    if len(user.companies) > 0:
-        reply_mes = localization.made_stats
-        keyboard = keyboards.get_manager_keyboard()
+def set_multicompany_stats_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+    comp_context = users_db.get_comp_context(user.uid)
 
-        temp_stats = get_temp_stats(user.uid, user.companies)
+    if comp_context != "None":
+        user.set_companies(comp_context.split())
+        send_stats(bot, users_db, user)
 
-        bot.send_message(user.uid, temp_stats)
+    else:
+        bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
+
+
+def set_multicompany_measure_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+    comp_context = users_db.get_comp_context(user.uid)
+
+    if comp_context != "None":
+        user.set_companies(comp_context.split())
+        ask_measure(bot, users_db, user)
+
+    else:
+        bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
+
+
+def set_stat_type_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+    if user.message.text == lc.translate(user.lang, "text_in_chat"):
+        manager_stats_handler(bot, users_db, user)
+
+    elif user.message.text == lc.translate(user.lang, "file_in_chat"):
+        bot.reply_to(user.message, lc.translate(user.lang, "looking_for_stats"))
+        # TODO запрос статистики и ее вывод
+        bot.send_message(user.uid, "Zdes budet statistika", reply_markup=keyboards.get_manager_keyboard(user.lang))
+        users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
+
+    elif user.message.text == lc.translate(user.lang, "file_on_email"):
+        if users_db.data_exist(user.uid):
+            last_email = users_db.get_data(user.uid)
+            keyboard = keyboards.get_emails_keyboard(user.lang, last_email)
+            reply_mes = lc.translate(user.lang, "choose_email")
+
+        else:
+            keyboard = keyboards.get_empty_keyboard()
+            reply_mes = lc.translate(user.lang, "insert_email")
+
+        bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+        users_db.set_stage(user.uid, st.ManagerStage.GET_EMAIL)
+
+    elif user.message.text == lc.translate(user.lang, "back"):
+        bot.reply_to(user.message, lc.translate(user.lang, "choose_option"), reply_markup=keyboards.get_manager_keyboard(user.lang))
         users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
 
     else:
-        bot.reply_to(user.message, localization.missing_reply)
-        return
-
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+        bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
 
 
-def set_manager_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    if len(user.companies) > 0:
-        reply_mes = localization.asked_measure
-        keyboard = keyboards.get_manager_keyboard()
+def set_ask_measure_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+    if user.message.text == lc.translate(user.lang, "yes"):
+        # TODO запрос измерения
+        bot.reply_to(user.message, lc.translate(user.lang, "asked_measure_for_info"), reply_markup=keyboards.get_manager_keyboard(user.lang))
+        users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
 
-        for company in user.companies:
-            try:
-                workers_list = ar.get_attached_workers(user.uid, company["guid"])
-            except:
-                print("бек не врубили")
-                bot.reply_to(user.message, "Связь с сервером отсутсвует, попробуйте позже.")
-                return
-            
-            for worker in workers_list:
-                try:
-                    bot.send_message(worker["telegram_id"], localization.manager_ask_measure)
-                except telebot.apihelper.ApiException:
-                    print("Попытка отправить на несуществующий tg_id {}".format(worker["telegram_id"]))
-
+    elif user.message.text == lc.translate(user.lang, "no"):
+        bot.reply_to(user.message, lc.translate(user.lang, "choose_option"), reply_markup=keyboards.get_manager_keyboard(user.lang))
         users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
 
     else:
-        bot.reply_to(user.message, localization.missing_reply)
-        return
+        bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
+
+
+def set_get_email_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+    if user.message.text != lc.translate(user.lang, "back"):
+        # TODO отправляем на такую то почту (user.message.text)
+        reply_mes = lc.translate(user.lang, "sending_stats")
+        keyboard = keyboards.get_manager_keyboard(user.lang)
+        new_stage = st.ManagerStage.CHOOSING_OPTION
+
+        users_db.set_data(user.uid, user.message.text)
+
+    else:
+        reply_mes = lc.translate(user.lang, "choose_option")
+        keyboard = keyboards.get_stat_types_keyboard(user.lang)
+        new_stage = st.ManagerStage.GET_STAT_TYPE
 
     bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    users_db.set_stage(user.uid, new_stage)

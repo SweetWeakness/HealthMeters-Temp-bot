@@ -3,11 +3,7 @@ import telebot
 import api_requests as ar
 import stages as st
 import keyboards
-from localizations.localization import Localization, Language
-
-
-# TODO: Про localization уже поговорили в файлах app.py и localization.py
-localization = Localization(Language.ru)
+import localizations.localization as lc
 
 
 class UserInfo:
@@ -15,56 +11,81 @@ class UserInfo:
         self.message = message
         self.uid = message.from_user.id
         self.companies = []
-        if users_db.stage_exist(self.uid):
-            self.stage = users_db.get_stage(self.uid)
-        else:
-            self.stage = "no stage"
-        if users_db.role_exist(self.uid):
-            self.role = users_db.get_role(self.uid)
-        else:
-            self.role = st.Role.NOBODY
+        self.stage = users_db.get_stage(self.uid)
+        self.role = users_db.get_role(self.uid)
+        self.lang = users_db.get_language(self.uid)
 
-    def set_role(self, role):
+    def set_role(self, role) -> None:
         self.role = role
 
-    def set_companies(self, companies):
+    def set_companies(self, companies) -> None:
         self.companies = companies
+
+    def set_language(self, language) -> None:
+        self.lang = language
 
 
 def set_start_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if user.role == "worker":
         new_role = st.Role.WORKER
-        new_stage = st.WorkerStage.GET_TEMP
-        keyboard = keyboards.get_employee_keyboard()
+        new_stage = st.WorkerStage.GET_LANG
 
     elif user.role == "manager":
         new_role = st.Role.MANAGER
-        new_stage = st.ManagerStage.CHOOSING_OPTION
-        keyboard = keyboards.get_manager_keyboard()
+        new_stage = st.ManagerStage.GET_LANG
 
     else:
-        bot.reply_to(user.message, localization.access_error)
+        bot.reply_to(user.message, lc.translate(user.lang, "access_error"))
         return
 
     users_db.set_role(user.uid, new_role)
     users_db.set_stage(user.uid, new_stage)
 
-    bot.reply_to(user.message, localization.greeting, reply_markup=keyboard)
+    bot.reply_to(user.message, "Choose your language:", reply_markup=keyboards.get_language_keyboard())
 
 
-def get_chosen_company(users_db, user: UserInfo) -> list:
+def set_language_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+    if user.role == "Role.MANAGER":
+        keyboard = keyboards.get_manager_keyboard(user.lang)
+        new_stage = st.ManagerStage.CHOOSING_OPTION
+    else:
+        keyboard = keyboards.get_employee_keyboard(user.lang)
+        new_stage = st.WorkerStage.GET_TEMP
+
+    if user.message.text == "Русский🇷🇺":
+        users_db.set_language(user.uid, "ru")
+        user.set_language("ru")
+
+    elif user.message.text == "English🇬🇧":
+        # need english localization
+        users_db.set_language(user.uid, "ru")
+        user.set_language("ru")
+
+    else:
+        bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
+        return
+
+    bot.reply_to(user.message, lc.translate(user.lang, "accept_lang"), reply_markup=keyboard)
+    bot.send_message(user.uid, lc.translate(user.lang, "greeting"))
+    users_db.set_stage(user.uid, new_stage)
+
+
+def set_company_context(users_db, user: UserInfo) -> None:
+    users_db.set_comp_context(user.uid, "None")
     companies = ar.get_companies_list(user.uid)
 
     if len(companies) == 0:
         users_db.set_role(user.uid, st.Role.NOBODY)
-        return []
+        return
 
-    if user.message.text == localization.choose_all:
-        return companies
+    if user.message.text == lc.translate(user.lang, "choose_all"):
+        comp_context = ""
+        for company in companies:
+            comp_context += "%s " % company["guid"]
+        users_db.set_comp_context(user.uid, comp_context)
 
     else:
         for company in companies:
             if company["name"] == user.message.text:
-                return [company]
-
-        return []
+                users_db.set_comp_context(user.uid, company["guid"])
+                return

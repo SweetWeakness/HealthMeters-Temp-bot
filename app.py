@@ -1,5 +1,4 @@
 import telebot
-import requests
 from flask import request
 
 from databases import redis_database
@@ -8,7 +7,8 @@ from flask_sqlalchemy import SQLAlchemy
 import api_requests as ar
 from config import config_manager as cfg
 from screens import manager_screens as ms, worker_screens as ws, default_screens as ds
-from localizations.localization import Localization, Language
+import localizations.localization as lc
+import stages as st
 
 
 server = Flask(__name__)
@@ -20,17 +20,6 @@ db = SQLAlchemy(server)
 
 from databases import api_db
 
-# TODO: Локаль предлагаю устанавливать не глобально, а для каждого пользователя.
-#  хранить ее можно например в какой-нибудь мапе внутри Localization.
-#  То есть для каждого юзера добавляем запись в мапу вида uid: locale_type.
-#  Это не критично, пока локаль одна, однако в будущем может быть полезно сделать
-#  английскую версию.
-#  Передавать сам uid можно внутрь функции localization service-а.
-#  Пример: localization.system_access_error(uid).
-#  Единсвтенное – из-за этого может возникнуть копипаста, но я придумал как ее обойти,
-#  смотри localization.py для пояснений.
-localization = Localization(Language.ru)
-
 
 TOKEN = cfg.get_token()
 bot = telebot.TeleBot(TOKEN)
@@ -41,6 +30,10 @@ users_db = redis_database.UserStorage()
 @bot.message_handler(commands=["start"])
 def start(message: telebot.types.Message) -> None:
     uid = message.from_user.id
+    users_db.set_role(uid, st.Role.NOBODY)
+    users_db.set_stage(uid, st.Role.NOBODY)
+    users_db.set_language(uid, "ru")
+    user_info = ds.UserInfo(message=message, users_db=users_db)
 
     ans = api_db.set_worker_id(message.from_user.username, uid)
     if "employees" in ans:
@@ -57,14 +50,13 @@ def start(message: telebot.types.Message) -> None:
         return
 
     if len(companies) > 0:
-        user_info = ds.UserInfo(message=message, users_db=users_db)
         # TODO [это уже персистентный TODO, который не относится к рефакторингу по первой ревизии]
         #  Тут как раз и стоит сетапить контекст 'роль/компания' пользователя,
         #  то есть пользователь в будущем сможет выбирать глобально с данными какой компании
         #  он взаимодействует в данный момент.
         try:
             role = ar.get_role(uid, companies[0]["guid"])
-        except requests.exceptions.RequestException:
+        except:
             bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
             return
 
@@ -73,7 +65,7 @@ def start(message: telebot.types.Message) -> None:
         ds.set_start_screen(bot, users_db, user_info)
 
     else:
-        bot.reply_to(message, localization.system_access_error)
+        bot.reply_to(message, lc.translate(user_info.lang, "system_access_error"))
 
 
 @bot.message_handler(content_types=["text"])
@@ -91,57 +83,63 @@ def text_handler(message: telebot.types.Message) -> None:
             ws.set_accept_temp_screen(bot, users_db, user_info)
 
         elif user_info.stage == "WorkerStage.GET_PHOTO":
-            bot.reply_to(message, localization.missing_reply)
-            bot.send_message(user_info.uid, localization.photo_validation)
-
-        elif user_info.stage == "WorkerStage.ACCEPT_PHOTO":
-            ws.set_accept_photo_screen(bot, users_db, user_info)
+            bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
+            bot.send_message(user_info.uid, lc.translate(user_info.lang, "photo_validation"))
 
         elif user_info.stage == "WorkerStage.GET_COMPANY":
             try:
-                receiving_companies = ds.get_chosen_company(users_db, user_info)
+                ds.set_company_context(users_db, user_info)
+                ws.set_getting_company_screen(bot, users_db, user_info)
             except:
                 print("бек не врубили")
                 bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
                 return
 
-            user_info.set_companies(receiving_companies)
-
-            ws.set_worker_send_screen(bot, users_db, user_info)
+        elif user_info.stage == "WorkerStage.GET_LANG":
+            ds.set_language_screen(bot, users_db, user_info)
 
         else:
-            bot.reply_to(message, localization.missing_reply)
+            bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
 
     elif user_info.role == "Role.MANAGER":
         if user_info.stage == "ManagerStage.CHOOSING_OPTION":
             ms.set_choosing_option_screen(bot, users_db, user_info)
 
-        elif user_info.stage == "ManagerStage.GET_INFO":
+        elif user_info.stage == "ManagerStage.MULTICOMPANY_STATS":
             try:
-                receiving_companies = ds.get_chosen_company(users_db, user_info)
+                ds.set_company_context(users_db, user_info)
+                ms.set_multicompany_stats_screen(bot, users_db, user_info)
             except:
                 print("бек не врубили")
                 bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
                 return
 
-            user_info.set_companies(receiving_companies)
-
-            ms.set_manager_info_screen(bot, users_db, user_info)
-
-        elif user_info.stage == "ManagerStage.ASK_TEMP":
+        elif user_info.stage == "ManagerStage.MULTICOMPANY_MEASURE":
             try:
-                receiving_companies = ds.get_chosen_company(users_db, user_info)
+                ds.set_company_context(users_db, user_info)
+                ms.set_multicompany_measure_screen(bot, users_db, user_info)
             except:
                 print("бек не врубили")
                 bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
                 return
 
-            user_info.set_companies(receiving_companies)
+        elif user_info.stage == "ManagerStage.GET_STAT_TYPE":
+            ms.set_stat_type_screen(bot, users_db, user_info)
 
-            ms.set_manager_temp_screen(bot, users_db, user_info)
+        elif user_info.stage == "ManagerStage.ASK_MEASURE":
+            ms.set_ask_measure_screen(bot, users_db, user_info)
+
+        elif user_info.stage == "ManagerStage.GET_EMAIL":
+            ms.set_get_email_screen(bot, users_db, user_info)
+
+        elif user_info.stage == "ManagerStage.GET_LANG":
+            ds.set_language_screen(bot, users_db, user_info)
+
+        else:
+            bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
 
     else:
-        bot.reply_to(message, localization.system_access_error)
+        bot.reply_to(message, lc.translate(user_info.lang, "system_access_error"))
 
 
 @bot.message_handler(content_types=["photo"])
@@ -150,20 +148,20 @@ def photo_handler(message: telebot.types.Message) -> None:
 
     if user_info.role == "Role.WORKER":
         if user_info.stage == "WorkerStage.VALIDATION_TEMP":
-            bot.reply_to(message, localization.missing_reply)
-            bot.send_message(user_info.uid, localization.insert_temp)
+            bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
+            bot.send_message(user_info.uid, lc.translate(user_info.lang, "insert_temp"))
 
         elif user_info.stage == "WorkerStage.GET_PHOTO":
             ws.set_getting_photo_screen(bot, users_db, user_info)
 
         else:
-            bot.reply_to(message, localization.missing_reply)
+            bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
 
     elif user_info.role == "Role.MANAGER":
-        bot.reply_to(message, localization.missing_reply)
+        bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
 
     else:
-        bot.reply_to(message, localization.system_access_error)
+        bot.reply_to(message, lc.translate(user_info.lang, "system_access_error"))
 
 
 @bot.message_handler(content_types=["audio", "document", "sticker", "video",
@@ -172,15 +170,15 @@ def other_types_handler(message: telebot.types.Message) -> None:
     user_info = ds.UserInfo(message=message, users_db=users_db)
 
     if user_info.role == "Role.WORKER" or user_info.role == "Role.MANAGER":
-        bot.reply_to(message, localization.missing_reply)
+        bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
         if user_info.stage == "WorkerStage.VALIDATION_TEMP":
-            bot.send_message(user_info.uid, localization.insert_temp)
+            bot.send_message(user_info.uid, lc.translate(user_info.lang, "insert_temp"))
 
         elif user_info.stage == "WorkerStage.GET_PHOTO":
-            bot.send_message(user_info.uid, localization.photo_validation)
+            bot.send_message(user_info.uid, lc.translate(user_info.lang, "photo_validation"))
 
     else:
-        bot.reply_to(message, localization.system_access_error)
+        bot.reply_to(message, lc.translate(user_info.lang, "system_access_error"))
 
 
 @server.route("/" + TOKEN, methods=["POST"])
@@ -204,18 +202,18 @@ def get_telegram_schedule():
     if "telegram_id" in res:
         for telegram_id in res["telegram_id"]:
             try:
-                bot.send_message(telegram_id, localization.manager_ask_measure)
+                bot.send_message(telegram_id, lc.translate(users_db.get_language(telegram_id), "manager_ask_measure"))
             except telebot.apihelper.ApiException:
-                print("не зарегался {}".format(telegram_id))
+                print("Попытка отправить на несуществующий tg_id {}".format(telegram_id))
 
         return {"status": "ok"}, 200
 
     else:
-        return "failed to get list of telegram_id", 404
+        return {"status": "failed to get list of telegram_id"}, 404
 
 
 @server.route("/new_employees", methods=['POST'])
-def synchronize():
+def get_new_employees():
     res = request.get_json()
 
     if "data" in res and "delete" in res:
