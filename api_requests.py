@@ -67,3 +67,7 @@ def add_health_data(uid: int, company_guid: str, temp: float) -> bool:
             return True
 
     return False
+
+
+def synchronize():
+    requests.get(server_url + "/synchronize")

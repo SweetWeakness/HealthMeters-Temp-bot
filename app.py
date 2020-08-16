@@ -222,8 +222,9 @@ def get_new_employees():
         return {"status": "ok"}, 200
 
     else:
-        return "failed to get list of workers", 404
+        return {"status": "failed to get list of workers"}, 404
 
 
 if __name__ == "__main__":
+    ar.synchronize()
     server.run(threaded=True, host=server_host, port=server_port)
