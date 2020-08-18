@@ -216,9 +216,10 @@ def get_telegram_schedule():
 def get_new_employees():
     res = request.get_json()
 
-    if "data" in res and "delete" in res:
-        api_db.set_waiting_workers(res["data"])
+    if "add" in res and "delete" in res and "edit" in res:
+        api_db.set_waiting_workers(res["add"])
         api_db.delete_waiting_workers(res["delete"])
+        ds.set_changing_role_screen(bot, users_db, res["edit"])
         return {"status": "ok"}, 200
 
     else:

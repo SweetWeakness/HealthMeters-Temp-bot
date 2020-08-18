@@ -45,6 +45,9 @@ class UserStorage:
     def data_exist(self, uid: int) -> bool:
         return self.db.exists(str(uid) + "_data")
 
+    def delete_data(self, uid: int) -> bool:
+        return self.db.delete(str(uid) + "_data")
+
     # Company in context of usage:
 
     def set_comp_context(self, uid: int, guid: str) -> None:

@@ -25,6 +25,33 @@ class UserInfo:
         self.lang = language
 
 
+def set_changing_role_screen(bot: telebot.TeleBot, users_db, user_list: list) -> None:
+    for user in user_list:
+        lang = users_db.get_language(user["telegram_id"])
+        tg_id = user["telegram_id"]
+
+        if user["role"] == "worker":
+            try:
+                bot.send_message(tg_id, "Ваша роль была изменена", reply_markup=keyboards.get_employee_keyboard(lang))
+            except telebot.apihelper.ApiException:
+                print("Попытка отправить на несуществующий tg_id {}".format(tg_id))
+
+            users_db.set_role(tg_id, st.Role.WORKER)
+            users_db.set_stage(tg_id, st.WorkerStage.GET_TEMP)
+
+        elif user["role"] == "manager":
+            try:
+                bot.send_message(tg_id, "Ваша роль была изменена", reply_markup=keyboards.get_manager_keyboard(lang))
+            except telebot.apihelper.ApiException:
+                print("Попытка отправить на несуществующий tg_id {}".format(tg_id))
+
+            users_db.set_role(tg_id, st.Role.MANAGER)
+            users_db.set_stage(tg_id, st.ManagerStage.CHOOSING_OPTION)
+
+        if users_db.data_exist(tg_id):
+            users_db.delete_data(tg_id)
+
+
 def set_start_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if user.role == "worker":
         new_role = st.Role.WORKER

@@ -165,7 +165,7 @@ def set_stat_type_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None
             reply_mes = lc.translate(user.lang, "choose_email")
 
         else:
-            keyboard = keyboards.get_empty_keyboard()
+            keyboard = keyboards.get_back_keyboard(user.lang)
             reply_mes = lc.translate(user.lang, "insert_email")
 
         bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
