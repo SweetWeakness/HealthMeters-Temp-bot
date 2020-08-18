@@ -226,5 +226,8 @@ def get_new_employees():
 
 
 if __name__ == "__main__":
-    ar.synchronize()
+    try:
+        ar.synchronize()
+    except:
+        print("Бэк не врубили")
     server.run(threaded=True, host=server_host, port=server_port)

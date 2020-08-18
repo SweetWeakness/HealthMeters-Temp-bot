@@ -9,7 +9,13 @@ from screens import stat_maker
 
 
 def send_stats(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    temp_stats = stat_maker.get_temp_stats(user.uid, user.companies, user.lang)
+    try:
+        temp_stats = stat_maker.get_temp_stats(user.uid, user.companies, user.lang)
+    except:
+        print("Бэк не врубили")
+        bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
+        return
+
     temp_stats_str = temp_stats[0]
     need_measurement = temp_stats[1]
 
@@ -57,6 +63,7 @@ def manager_stats_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> Non
     if len(companies) == 1:
         user.set_companies([companies[0]["guid"]])
         send_stats(bot, users_db, user)
+        users_db.set_comp_context(user.uid, companies[0]["guid"])
         return
 
     elif len(companies) > 1:
@@ -174,7 +181,22 @@ def set_stat_type_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None
 
 def set_ask_measure_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if user.message.text == lc.translate(user.lang, "yes"):
-        # TODO запрос измерения
+        comp_context = users_db.get_comp_context(user.uid)
+        user.set_companies(comp_context.split())
+
+        try:
+            ask_measure_list = stat_maker.get_measure_list(user.uid, comp_context.split())
+        except:
+            print("Бэк не врубили")
+            bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
+            return
+
+        for worker in ask_measure_list:
+            try:
+                bot.send_message(worker["id"], lc.translate(user.lang, "manager_ask_measure"))
+            except telebot.apihelper.ApiException:
+                print("Попытка отправить на несуществующий tg_id {}".format(worker["id"]))
+
         bot.reply_to(user.message, lc.translate(user.lang, "asked_measure_for_info"), reply_markup=keyboards.get_manager_keyboard(user.lang))
         users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
 
