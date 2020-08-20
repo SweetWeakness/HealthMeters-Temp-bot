@@ -34,8 +34,8 @@ def send_text_stats(bot: telebot.TeleBot, user: UserInfo) -> st.ManagerStage:
 
 
 def ask_measure(bot: telebot.TeleBot, user: UserInfo):
-    for company in user.companies:
-        workers_list = ar.get_attached_workers(user.uid, company)
+    for company_guid in user.companies:
+        workers_list = ar.get_attached_workers(user.uid, company_guid)
 
         for worker in workers_list:
             try:
@@ -221,7 +221,17 @@ def set_ask_measure_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> No
 
 def set_get_email_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if user.message.text != lc.translate(user.lang, "back"):
-        # TODO отправляем на такую то почту (user.message.text)
+        comp_context = users_db.get_comp_context(user.uid)
+        user.set_companies(comp_context.split())
+
+        for company_guid in user.companies:
+            try:
+                ar.send_file_on_email(user.uid, company_guid, user.message.text)
+            except:
+                print("Бэк не врубили")
+                bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
+                return
+
         reply_mes = lc.translate(user.lang, "sending_stats")
         keyboard = keyboards.get_manager_keyboard(user.lang)
         new_stage = st.ManagerStage.CHOOSING_OPTION
