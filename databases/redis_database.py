@@ -23,6 +23,9 @@ class UserStorage:
     def role_exist(self, uid: int) -> bool:
         return self.db.exists(str(uid))
 
+    def delete_role(self, uid: int) -> bool:
+        return self.db.delete(str(uid))
+
     # Stage (bot's menu stage):
 
     def set_stage(self, uid: int, stage) -> None:
@@ -33,6 +36,9 @@ class UserStorage:
 
     def stage_exist(self, uid: int) -> bool:
         return self.db.exists(str(uid) + "_stage")
+
+    def delete_stage(self, uid: int) -> bool:
+        return self.db.delete(str(uid) + "_stage")
 
     # Data (temp/email for worker/manager):
 
@@ -56,6 +62,12 @@ class UserStorage:
     def get_comp_context(self, uid: int) -> str:
         return self.db.get(str(uid) + "_comp_context")
 
+    def comp_context_exist(self, uid: int) -> bool:
+        return self.db.exists(str(uid) + "_comp_context")
+
+    def delete_comp_context(self, uid: int) -> bool:
+        return self.db.delete(str(uid) + "_comp_context")
+
     # Language:
 
     def set_language(self, uid: int, lang: str) -> None:
@@ -63,3 +75,9 @@ class UserStorage:
 
     def get_language(self, uid: int) -> str:
         return self.db.get(str(uid) + "_language")
+
+    def language_exist(self, uid: int) -> bool:
+        return self.db.exists(str(uid) + "_language")
+
+    def delete_language(self, uid: int) -> bool:
+        return self.db.delete(str(uid) + "_language")

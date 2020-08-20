@@ -2,14 +2,14 @@ from app import db
 from databases.models import User
 
 
-def set_waiting_workers(guid_username_list: list):
-    for worker in guid_username_list:
-        worker_model = User.query.filter_by(guid=worker["guid"]).first()
+def add_pending_users(users_list: list):
+    for user in users_list:
+        user_model = User.query.filter_by(guid=user["guid"]).first()
 
-        if worker_model is not None:
-            worker_model.username = worker["nickname"]
+        if user_model is not None:
+            user_model.username = user["nickname"]
         else:
-            db.session.add(User(guid=worker["guid"], username=worker["nickname"]))
+            db.session.add(User(guid=user["guid"], username=user["nickname"]))
 
     db.session.commit()
     print("db changed (added)")
@@ -28,15 +28,14 @@ def set_worker_id(username: str, telegram_id: int):
     return ans
 
 
-def delete_waiting_workers(guid_username_list: list):
-    for worker in guid_username_list:
-        worker_model = User.query.filter_by(guid=worker["guid"]).first()
+def delete_waiting_user(user):
+    user_model = User.query.filter_by(guid=user["guid"]).first()
 
-        if worker_model is not None:
-            db.session.delete(worker_model)
+    if user_model is not None:
+        db.session.delete(user_model)
 
     db.session.commit()
-    print("db changed (deleted)")
+    print("db changed (deleted tg_id %s)" % user["telegram_id"])
 
 
 def confirm_deletion(username: int):

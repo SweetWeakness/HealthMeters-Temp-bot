@@ -235,11 +235,20 @@ def get_new_employees():
     res = request.get_json()
 
     if "add" in res and "delete" in res and "edit" in res:
-        api_db.set_waiting_workers(res["add"])
-        # todo изменить основную бд при удалении (кейс когда удалили из бд с фронта)
-        api_db.delete_waiting_workers(res["delete"])
-        # todo не забыть удалить data из основной бд
-        ds.set_changing_role_screen(bot, users_db, res["edit"])
+        api_db.add_pending_users(res["add"])
+
+        for user in res["delete"]:
+            if user["telegram_id"] is None:
+                api_db.delete_waiting_user(user)
+            else:
+                ds.set_deleting_screen(bot, users_db, user["telegram_id"])
+
+        for user in res["edit"]:
+            if user["telegram_id"] is None:
+                api_db.add_pending_users([user])
+            else:
+                ds.set_changing_role_screen(bot, users_db, user)
+
         return {"status": "ok"}, 200
 
     else:
