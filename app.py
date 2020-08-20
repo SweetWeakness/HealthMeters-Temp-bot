@@ -105,10 +105,10 @@ def text_handler(message: telebot.types.Message) -> None:
         if user_info.stage == "ManagerStage.CHOOSING_OPTION":
             ms.set_choosing_option_screen(bot, users_db, user_info)
 
-        elif user_info.stage == "ManagerStage.MULTICOMPANY_STATS":
+        elif user_info.stage == "ManagerStage.MULTICOMPANY_TEXT_STATS":
             try:
                 ds.set_company_context(users_db, user_info)
-                ms.set_multicompany_stats_screen(bot, users_db, user_info)
+                ms.set_multicompany_screen(bot, users_db, user_info, "send_text_stats")
             except:
                 print("бек не врубили")
                 bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
@@ -117,7 +117,25 @@ def text_handler(message: telebot.types.Message) -> None:
         elif user_info.stage == "ManagerStage.MULTICOMPANY_MEASURE":
             try:
                 ds.set_company_context(users_db, user_info)
-                ms.set_multicompany_measure_screen(bot, users_db, user_info)
+                ms.set_multicompany_screen(bot, users_db, user_info, "ask_measure")
+            except:
+                print("бек не врубили")
+                bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
+                return
+
+        elif user_info.stage == "ManagerStage.MULTICOMPANY_FILE_STATS":
+            try:
+                ds.set_company_context(users_db, user_info)
+                ms.set_multicompany_screen(bot, users_db, user_info, "send_file_stat")
+            except:
+                print("бек не врубили")
+                bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
+                return
+
+        elif user_info.stage == "ManagerStage.MULTICOMPANY_EMAIL_STATS":
+            try:
+                ds.set_company_context(users_db, user_info)
+                ms.set_multicompany_screen(bot, users_db, user_info, "set_getting_email_screen")
             except:
                 print("бек не врубили")
                 bot.reply_to(message, "Связь с сервером отсутсвует, попробуйте позже.")
@@ -218,7 +236,9 @@ def get_new_employees():
 
     if "add" in res and "delete" in res and "edit" in res:
         api_db.set_waiting_workers(res["add"])
+        # todo изменить основную бд при удалении (кейс когда удалили из бд с фронта)
         api_db.delete_waiting_workers(res["delete"])
+        # todo не забыть удалить data из основной бд
         ds.set_changing_role_screen(bot, users_db, res["edit"])
         return {"status": "ok"}, 200
 
