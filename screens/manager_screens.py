@@ -53,10 +53,15 @@ def send_file_stat(bot: telebot.TeleBot, user: UserInfo) -> None:
     bot.reply_to(user.message, lc.translate(user.lang, "looking_for_stats"))
 
     for company_guid in user.companies:
+        print(1)
         df = ar.get_base64_file(user.uid, company_guid)
+        print(2)
         df = pickle.loads(base64.b64decode(df))
+        print(3)
         df.to_excel(company_guid + ".xlsx")
+        print(4)
         excel_df = open(company_guid + ".xlsx", "rb")
+        print(5)
 
         bot.send_document(user.uid, excel_df,
                           reply_markup=keyboards.get_manager_keyboard(user.lang))
