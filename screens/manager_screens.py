@@ -1,4 +1,7 @@
 import telebot
+import base64
+import pickle
+import pandas as pd
 
 import api_requests as ar
 import stages as st
@@ -8,8 +11,9 @@ import localizations.localization as lc
 from screens import stat_maker
 
 
-def send_stats(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+def send_text_stats(bot: telebot.TeleBot, user: UserInfo) -> st.ManagerStage:
     temp_stats = stat_maker.get_temp_stats(user.uid, user.companies, user.lang)
+
     temp_stats_str = temp_stats[0]
     need_measurement = temp_stats[1]
 
@@ -26,10 +30,10 @@ def send_stats(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
         new_stage = st.ManagerStage.CHOOSING_OPTION
 
     bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
-    users_db.set_stage(user.uid, new_stage)
+    return new_stage
 
 
-def ask_measure(bot: telebot.TeleBot, users_db, user: UserInfo):
+def ask_measure(bot: telebot.TeleBot, user: UserInfo):
     for company in user.companies:
         workers_list = ar.get_attached_workers(user.uid, company)
 
@@ -43,36 +47,37 @@ def ask_measure(bot: telebot.TeleBot, users_db, user: UserInfo):
     keyboard = keyboards.get_manager_keyboard(user.lang)
 
     bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
-    users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
 
 
-def manager_stats_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    try:
-        companies = ar.get_companies_list(user.uid)
-    except:
-        print("бек не врубили")
-        bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
-        return
+def send_file_stat(bot: telebot.TeleBot, user: UserInfo) -> None:
+    bot.reply_to(user.message, lc.translate(user.lang, "looking_for_stats"))
 
-    if len(companies) == 1:
-        user.set_companies([companies[0]["guid"]])
-        send_stats(bot, users_db, user)
-        return
+    for company_guid in user.companies:
+        df = ar.get_base64_file(user.uid, company_guid)
+        df = pickle.loads(base64.b64decode(df))
+        df.to_excel(company_guid + ".xlsx")
+        excel_df = open(company_guid + ".xlsx", "rb")
 
-    elif len(companies) > 1:
-        users_db.set_stage(user.uid, st.ManagerStage.MULTICOMPANY_STATS)
-        reply_mes = lc.translate(user.lang, "choose_company_stats")
-        keyboard = keyboards.get_companies_keyboard(user.lang, companies)
+        bot.send_document(user.uid, excel_df,
+                          reply_markup=keyboards.get_manager_keyboard(user.lang))
+        # todo delete file after sending
+
+
+def set_getting_email_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+    if users_db.data_exist(user.uid):
+        last_email = users_db.get_data(user.uid)
+        keyboard = keyboards.get_emails_keyboard(user.lang, last_email)
+        reply_mes = lc.translate(user.lang, "choose_email")
 
     else:
-        users_db.set_role(user.uid, st.Role.NOBODY)
-        reply_mes = lc.translate(user.lang, "access_error")
-        keyboard = keyboards.get_empty_keyboard()
+        keyboard = keyboards.get_back_keyboard(user.lang)
+        reply_mes = lc.translate(user.lang, "insert_email")
 
     bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
 
 
-def manager_temp_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+def manager_common_handler(bot: telebot.TeleBot, users_db, user: UserInfo, func: str) -> None:
+    # func == "ask_measure" | "send_text_stats" | "send_file_stat" | "set_getting_email_screen"
     try:
         companies = ar.get_companies_list(user.uid)
     except:
@@ -82,9 +87,21 @@ def manager_temp_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None
 
     if len(companies) == 1:
         user.set_companies([companies[0]["guid"]])
+        users_db.set_comp_context(user.uid, companies[0]["guid"])
 
         try:
-            ask_measure(bot, users_db, user)
+            if func == "ask_measure":
+                ask_measure(bot, user)
+                users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
+            elif func == "send_text_stats":
+                new_stage = send_text_stats(bot, user)
+                users_db.set_stage(user.uid, new_stage)
+            elif func == "send_file_stat":
+                send_file_stat(bot, user)
+                users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
+            elif func == "set_getting_email_screen":
+                set_getting_email_screen(bot, users_db, user)
+                users_db.set_stage(user.uid, st.ManagerStage.GET_EMAIL)
         except:
             print("бек не врубили")
             bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
@@ -92,8 +109,18 @@ def manager_temp_handler(bot: telebot.TeleBot, users_db, user: UserInfo) -> None
         return
 
     elif len(companies) > 1:
-        users_db.set_stage(user.uid, st.ManagerStage.MULTICOMPANY_MEASURE)
-        reply_mes = lc.translate(user.lang, "choose_company_measure")
+        # new_stage is always initialized, bcs this handler is used in these func's contexts
+        if func == "ask_measure":
+            new_stage = st.ManagerStage.MULTICOMPANY_MEASURE
+        elif func == "send_text_stats":
+            new_stage = st.ManagerStage.MULTICOMPANY_TEXT_STATS
+        elif func == "send_file_stat":
+            new_stage = st.ManagerStage.MULTICOMPANY_FILE_STATS
+        elif func == "set_getting_email_screen":
+            new_stage = st.ManagerStage.MULTICOMPANY_EMAIL_STATS
+
+        users_db.set_stage(user.uid, new_stage)
+        reply_mes = lc.translate(user.lang, "choose_company_stats")
         keyboard = keyboards.get_companies_keyboard(user.lang, companies)
 
     else:
@@ -113,29 +140,30 @@ def set_choosing_option_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
         users_db.set_stage(user.uid, st.ManagerStage.GET_STAT_TYPE)
 
     elif user.message.text == lc.translate(user.lang, "ask_measure"):
-        manager_temp_handler(bot, users_db, user)
+        manager_common_handler(bot, users_db, user, "ask_measure")
 
     else:
         bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
 
 
-def set_multicompany_stats_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+def set_multicompany_screen(bot: telebot.TeleBot, users_db, user: UserInfo,  func: str) -> None:
     comp_context = users_db.get_comp_context(user.uid)
 
     if comp_context != "None":
         user.set_companies(comp_context.split())
-        send_stats(bot, users_db, user)
 
-    else:
-        bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
-
-
-def set_multicompany_measure_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    comp_context = users_db.get_comp_context(user.uid)
-
-    if comp_context != "None":
-        user.set_companies(comp_context.split())
-        ask_measure(bot, users_db, user)
+        if func == "ask_measure":
+            ask_measure(bot, user)
+            users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
+        elif func == "send_text_stats":
+            new_stage = send_text_stats(bot, user)
+            users_db.set_stage(user.uid, new_stage)
+        elif func == "send_file_stat":
+            send_file_stat(bot, user)
+            users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
+        elif func == "set_getting_email_screen":
+            set_getting_email_screen(bot, users_db, user)
+            users_db.set_stage(user.uid, st.ManagerStage.GET_EMAIL)
 
     else:
         bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
@@ -143,29 +171,17 @@ def set_multicompany_measure_screen(bot: telebot.TeleBot, users_db, user: UserIn
 
 def set_stat_type_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if user.message.text == lc.translate(user.lang, "text_in_chat"):
-        manager_stats_handler(bot, users_db, user)
+        manager_common_handler(bot, users_db, user, "send_text_stats")
 
     elif user.message.text == lc.translate(user.lang, "file_in_chat"):
-        bot.reply_to(user.message, lc.translate(user.lang, "looking_for_stats"))
-        # TODO запрос статистики и ее вывод
-        bot.send_message(user.uid, "Zdes budet statistika", reply_markup=keyboards.get_manager_keyboard(user.lang))
-        users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
+        manager_common_handler(bot, users_db, user, "send_file_stat")
 
     elif user.message.text == lc.translate(user.lang, "file_on_email"):
-        if users_db.data_exist(user.uid):
-            last_email = users_db.get_data(user.uid)
-            keyboard = keyboards.get_emails_keyboard(user.lang, last_email)
-            reply_mes = lc.translate(user.lang, "choose_email")
-
-        else:
-            keyboard = keyboards.get_empty_keyboard()
-            reply_mes = lc.translate(user.lang, "insert_email")
-
-        bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
-        users_db.set_stage(user.uid, st.ManagerStage.GET_EMAIL)
+        manager_common_handler(bot, users_db, user, "set_getting_email_screen")
 
     elif user.message.text == lc.translate(user.lang, "back"):
-        bot.reply_to(user.message, lc.translate(user.lang, "choose_option"), reply_markup=keyboards.get_manager_keyboard(user.lang))
+        bot.reply_to(user.message, lc.translate(user.lang, "choose_option"), 
+                     reply_markup=keyboards.get_manager_keyboard(user.lang))
         users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
 
     else:
@@ -174,12 +190,29 @@ def set_stat_type_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None
 
 def set_ask_measure_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
     if user.message.text == lc.translate(user.lang, "yes"):
-        # TODO запрос измерения
-        bot.reply_to(user.message, lc.translate(user.lang, "asked_measure_for_info"), reply_markup=keyboards.get_manager_keyboard(user.lang))
+        comp_context = users_db.get_comp_context(user.uid)
+        user.set_companies(comp_context.split())
+
+        try:
+            ask_measure_list = stat_maker.get_measure_list(user.uid, comp_context.split())
+        except:
+            print("Бэк не врубили")
+            bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
+            return
+
+        for worker in ask_measure_list:
+            try:
+                bot.send_message(worker["telegram_id"], lc.translate(user.lang, "manager_ask_measure"))
+            except telebot.apihelper.ApiException:
+                print("Попытка отправить на несуществующий tg_id {}".format(worker["telegram_id"]))
+
+        bot.reply_to(user.message, lc.translate(user.lang, "asked_measure_for_info"), 
+                     reply_markup=keyboards.get_manager_keyboard(user.lang))
         users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
 
     elif user.message.text == lc.translate(user.lang, "no"):
-        bot.reply_to(user.message, lc.translate(user.lang, "choose_option"), reply_markup=keyboards.get_manager_keyboard(user.lang))
+        bot.reply_to(user.message, lc.translate(user.lang, "choose_option"), 
+                     reply_markup=keyboards.get_manager_keyboard(user.lang))
         users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
 
     else:

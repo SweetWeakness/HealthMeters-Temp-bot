@@ -67,3 +67,18 @@ def add_health_data(uid: int, company_guid: str, temp: float) -> bool:
             return True
 
     return False
+
+
+def synchronize():
+    requests.get(server_url + "/synchronize")
+
+
+def get_base64_file(uid: int, company_guid: str) -> str:
+    data = {
+        "telegram_id": uid,
+        "company": company_guid,
+        "type": "telegram"
+    }
+    respond_json = send_request("/file_statistic", data)
+
+    return respond_json["df"]

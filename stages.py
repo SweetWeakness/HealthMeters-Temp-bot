@@ -4,11 +4,13 @@ from enum import IntFlag
 class ManagerStage(IntFlag):
     GET_LANG = 1
     CHOOSING_OPTION = 2
-    MULTICOMPANY_STATS = 3  # choosing companies for stats
+    MULTICOMPANY_TEXT_STATS = 3  # choosing companies for stats
     MULTICOMPANY_MEASURE = 4  # choosing companies for asking measurement
-    GET_STAT_TYPE = 5
-    ASK_MEASURE = 6
-    GET_EMAIL = 7
+    MULTICOMPANY_FILE_STATS = 5
+    MULTICOMPANY_EMAIL_STATS = 6
+    GET_STAT_TYPE = 7
+    ASK_MEASURE = 8
+    GET_EMAIL = 9
 
 
 class WorkerStage(IntFlag):

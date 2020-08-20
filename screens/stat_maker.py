@@ -10,6 +10,24 @@ def pretty_date(ugly_date) -> str:
     return date.strftime("%d.%m %H:%M")
 
 
+def get_measure_list(manager_uid: int, companies_list: list) -> list:
+    ans = []
+
+    for company in companies_list:
+        workers_stats = ar.get_workers_stats(manager_uid, company)
+
+        for stat in workers_stats:
+            if stat["last_temp"] is not None:
+                measure_date = datetime.utcfromtimestamp(stat["date"]).strftime("%d.%m")
+                current_date = datetime.today().strftime("%d.%m")
+                if current_date != measure_date:
+                    ans.append(stat)
+            else:
+                ans.append(stat)
+
+    return ans
+
+
 def get_key_from_stats(worker_stats: dict) -> float:
     if "date" in worker_stats:
         measure_date = datetime.utcfromtimestamp(worker_stats["date"]).strftime("%d.%m")
