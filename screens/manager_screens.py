@@ -60,7 +60,7 @@ def send_file_stat(bot: telebot.TeleBot, user: UserInfo) -> None:
 
         bot.send_document(user.uid, excel_df,
                           reply_markup=keyboards.get_manager_keyboard(user.lang))
-        # todo delete file after sending
+        # todo delete file after sending and also fix problem on heroku
 
 
 def set_getting_email_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
