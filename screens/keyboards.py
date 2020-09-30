@@ -13,7 +13,8 @@ def get_keyboard(buttons_text_list: list) -> telebot.types.ReplyKeyboardMarkup:
 
 
 def get_manager_keyboard(lang: str):
-    buttons_text_list = [lc.translate(lang, "common_stat"), lc.translate(lang, "ask_measure")]
+    buttons_text_list = [lc.translate(lang, "common_stat"), lc.translate(lang, "ask_measure"),
+                         lc.translate(lang, "measure_temp")]
     return get_keyboard(buttons_text_list)
 
 

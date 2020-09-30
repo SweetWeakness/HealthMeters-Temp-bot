@@ -12,6 +12,7 @@ class UserStorage:
     def __init__(self):
         self.db = redis.from_url(url=redis_url, db=db_index, decode_responses=True)
 
+    # heroku allows no more than 1 connection ;(
     # Role:
 
     def set_role(self, uid: int, role) -> None:
@@ -40,7 +41,7 @@ class UserStorage:
     def delete_stage(self, uid: int) -> bool:
         return self.db.delete(str(uid) + "_stage")
 
-    # Data (temp/email for worker/manager):
+    # Data (email for manager):
 
     def set_data(self, uid: int, data: str) -> None:
         self.db.set(str(uid) + "_data", str(data))
@@ -53,6 +54,20 @@ class UserStorage:
 
     def delete_data(self, uid: int) -> bool:
         return self.db.delete(str(uid) + "_data")
+
+    # Temperature (for worker):
+
+    def set_temp(self, uid: int, temp: str) -> None:
+        self.db.set(str(uid) + "_temp", str(temp))
+
+    def get_temp(self, uid: int) -> str:
+        return self.db.get(str(uid) + "_temp")
+
+    def temp_exist(self, uid: int) -> bool:
+        return self.db.exists(str(uid) + "_temp")
+
+    def delete_temp(self, uid: int) -> bool:
+        return self.db.delete(str(uid) + "_temp")
 
     # Company in context of usage:
 

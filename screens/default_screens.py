@@ -2,7 +2,7 @@ import telebot
 
 import api_requests as ar
 import stages as st
-import keyboards
+from screens import keyboards
 import localizations.localization as lc
 
 
@@ -11,9 +11,18 @@ class UserInfo:
         self.message = message
         self.uid = message.from_user.id
         self.companies = []
-        self.stage = users_db.get_stage(self.uid)
-        self.role = users_db.get_role(self.uid)
-        self.lang = users_db.get_language(self.uid)
+        if users_db.stage_exist(self.uid):
+            self.stage = users_db.get_stage(self.uid)
+        else:
+            self.stage = "no stage"
+        if users_db.role_exist(self.uid):
+            self.role = users_db.get_role(self.uid)
+        else:
+            self.role = "no role"
+        if users_db.language_exist(self.uid):
+            self.lang = users_db.get_language(self.uid)
+        else:
+            self.lang = "ru"
 
     def set_role(self, role) -> None:
         self.role = role
@@ -23,6 +32,26 @@ class UserInfo:
 
     def set_language(self, language) -> None:
         self.lang = language
+
+
+def user_data_deletion(users_db, tg_id: int):
+    if users_db.role_exist(tg_id):
+        users_db.delete_role(tg_id)
+
+    if users_db.data_exist(tg_id):
+        users_db.delete_data(tg_id)
+
+    if users_db.stage_exist(tg_id):
+        users_db.delete_stage(tg_id)
+
+    if users_db.comp_context_exist(tg_id):
+        users_db.delete_comp_context(tg_id)
+
+    if users_db.language_exist(tg_id):
+        users_db.delete_language(tg_id)
+
+    if users_db.temp_exist(tg_id):
+        users_db.delete_temp(tg_id)
 
 
 def set_start_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
@@ -75,7 +104,7 @@ def set_company_context(users_db, user: UserInfo) -> None:
     companies = ar.get_companies_list(user.uid)
 
     if len(companies) == 0:
-        users_db.set_role(user.uid, st.Role.NOBODY)
+        user_data_deletion(users_db, user.uid)
         return
 
     if user.message.text == lc.translate(user.lang, "choose_all"):
@@ -92,20 +121,7 @@ def set_company_context(users_db, user: UserInfo) -> None:
 
 
 def set_deleting_screen(bot: telebot.TeleBot, users_db, tg_id: int) -> None:
-    if users_db.role_exist(tg_id):
-        users_db.delete_role(tg_id)
-
-    if users_db.data_exist(tg_id):
-        users_db.delete_data(tg_id)
-
-    if users_db.stage_exist(tg_id):
-        users_db.delete_stage(tg_id)
-
-    if users_db.comp_context_exist(tg_id):
-        users_db.delete_comp_context(tg_id)
-
-    if users_db.language_exist(tg_id):
-        users_db.delete_language(tg_id)
+    user_data_deletion(users_db, tg_id)
 
     bot.send_message(tg_id, "Вас удалили из базы данных. До свидания.")
 

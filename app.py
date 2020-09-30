@@ -8,7 +8,7 @@ import api_requests as ar
 from config import config_manager as cfg
 from screens import manager_screens as ms, worker_screens as ws, default_screens as ds
 import localizations.localization as lc
-import stages as st
+from screens.keyboards import get_empty_keyboard
 
 
 server = Flask(__name__)
@@ -29,11 +29,8 @@ users_db = redis_database.UserStorage()
 
 @bot.message_handler(commands=["start"])
 def start(message: telebot.types.Message) -> None:
-    uid = message.from_user.id
-    users_db.set_role(uid, st.Role.NOBODY)
-    users_db.set_stage(uid, st.Role.NOBODY)
-    users_db.set_language(uid, "ru")
     user_info = ds.UserInfo(message=message, users_db=users_db)
+    uid = message.from_user.id
 
     ans = api_db.set_worker_id(message.from_user.username, uid)
     if "employees" in ans:
@@ -153,33 +150,45 @@ def text_handler(message: telebot.types.Message) -> None:
         elif user_info.stage == "ManagerStage.GET_LANG":
             ds.set_language_screen(bot, users_db, user_info)
 
+        elif user_info.stage == "ManagerStage.VALIDATION_TEMP":
+            ms.set_validation_temp_screen(bot, users_db, user_info)
+
+        elif user_info.stage == "ManagerStage.ACCEPT_TEMP":
+            ms.set_accept_temp_screen(bot, users_db, user_info)
+
+        elif user_info.stage == "ManagerStage.GET_PHOTO":
+            bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
+            bot.send_message(user_info.uid, lc.translate(user_info.lang, "photo_validation"))
+
         else:
             bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
 
     else:
-        bot.reply_to(message, lc.translate(user_info.lang, "system_access_error"))
+        bot.reply_to(message, lc.translate(user_info.lang, "system_access_error"),
+                     reply_markup=get_empty_keyboard())
 
 
 @bot.message_handler(content_types=["photo"])
 def photo_handler(message: telebot.types.Message) -> None:
     user_info = ds.UserInfo(message=message, users_db=users_db)
 
-    if user_info.role == "Role.WORKER":
-        if user_info.stage == "WorkerStage.VALIDATION_TEMP":
+    if user_info.role == "Role.WORKER" or user_info.role == "Role.MANAGER":
+        if user_info.stage == "WorkerStage.VALIDATION_TEMP" or user_info.stage == "ManagerStage.VALIDATION_TEMP":
             bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
             bot.send_message(user_info.uid, lc.translate(user_info.lang, "insert_temp"))
 
         elif user_info.stage == "WorkerStage.GET_PHOTO":
             ws.set_getting_photo_screen(bot, users_db, user_info)
 
+        elif user_info.stage == "ManagerStage.GET_PHOTO":
+            ms.manager_common_handler(bot, users_db, user_info, "accept_photo")
+
         else:
             bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
 
-    elif user_info.role == "Role.MANAGER":
-        bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
-
     else:
-        bot.reply_to(message, lc.translate(user_info.lang, "system_access_error"))
+        bot.reply_to(message, lc.translate(user_info.lang, "system_access_error"),
+                     reply_markup=get_empty_keyboard())
 
 
 @bot.message_handler(content_types=["audio", "document", "sticker", "video",
@@ -189,14 +198,15 @@ def other_types_handler(message: telebot.types.Message) -> None:
 
     if user_info.role == "Role.WORKER" or user_info.role == "Role.MANAGER":
         bot.reply_to(message, lc.translate(user_info.lang, "missing_reply"))
-        if user_info.stage == "WorkerStage.VALIDATION_TEMP":
+        if user_info.stage == "WorkerStage.VALIDATION_TEMP" or user_info.stage == "ManagerStage.VALIDATION_TEMP":
             bot.send_message(user_info.uid, lc.translate(user_info.lang, "insert_temp"))
 
-        elif user_info.stage == "WorkerStage.GET_PHOTO":
+        elif user_info.stage == "WorkerStage.GET_PHOTO" or user_info.stage == "ManagerStage.GET_PHOTO":
             bot.send_message(user_info.uid, lc.translate(user_info.lang, "photo_validation"))
 
     else:
-        bot.reply_to(message, lc.translate(user_info.lang, "system_access_error"))
+        bot.reply_to(message, lc.translate(user_info.lang, "system_access_error"),
+                     reply_markup=get_empty_keyboard())
 
 
 @server.route("/" + TOKEN, methods=["POST"])
