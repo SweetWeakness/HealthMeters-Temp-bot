@@ -18,7 +18,7 @@ def add_measurement(bot: telebot.TeleBot, users_db, user: UserInfo, companies: l
     for company in companies:
         ar.add_health_data(user.uid, company["guid"], users_db.get_temp(user.uid))
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
 
 
 def send_text_stats(bot: telebot.TeleBot, user: UserInfo) -> st.ManagerStage:
@@ -27,7 +27,7 @@ def send_text_stats(bot: telebot.TeleBot, user: UserInfo) -> st.ManagerStage:
     temp_stats_str = temp_stats[0]
     need_measurement = temp_stats[1]
 
-    bot.reply_to(user.message, temp_stats_str, parse_mode="markdown")
+    bot.send_message(user.uid, temp_stats_str, parse_mode="markdown")
 
     if need_measurement:
         reply_mes = lc.translate(user.lang, "ask_measure_for_info")
@@ -56,11 +56,11 @@ def ask_measure(bot: telebot.TeleBot, user: UserInfo):
     reply_mes = lc.translate(user.lang, "asked_measure")
     keyboard = keyboards.get_manager_keyboard(user.lang)
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
 
 
 def send_file_stat(bot: telebot.TeleBot, user: UserInfo) -> None:
-    bot.reply_to(user.message, lc.translate(user.lang, "looking_for_stats"))
+    bot.send_message(user.uid, lc.translate(user.lang, "looking_for_stats"))
 
     for company_guid in user.companies:
         df = ar.get_base64_file(user.uid, company_guid)
@@ -83,7 +83,7 @@ def set_getting_email_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> 
         keyboard = keyboards.get_back_keyboard(user.lang)
         reply_mes = lc.translate(user.lang, "insert_email")
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
 
 
 def manager_common_handler(bot: telebot.TeleBot, users_db, user: UserInfo, func: str) -> None:
@@ -92,7 +92,7 @@ def manager_common_handler(bot: telebot.TeleBot, users_db, user: UserInfo, func:
         companies = ar.get_companies_list(user.uid)
     except:
         print("бек не врубили")
-        bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
+        bot.send_message(user.uid, lc.translate(user.lang, "server_response_error"))
         return
 
     if len(companies) == 1:
@@ -117,7 +117,7 @@ def manager_common_handler(bot: telebot.TeleBot, users_db, user: UserInfo, func:
                 users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
         except:
             print("бек не врубили")
-            bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
+            bot.send_message(user.uid, lc.translate(user.lang, "server_response_error"))
 
         return
 
@@ -137,7 +137,7 @@ def manager_common_handler(bot: telebot.TeleBot, users_db, user: UserInfo, func:
                 users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
             except:
                 print("бек не врубили")
-                bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
+                bot.send_message(user.uid, lc.translate(user.lang, "server_response_error"))
             return
 
         users_db.set_stage(user.uid, new_stage)
@@ -149,7 +149,7 @@ def manager_common_handler(bot: telebot.TeleBot, users_db, user: UserInfo, func:
         reply_mes = lc.translate(user.lang, "access_error")
         keyboard = keyboards.get_empty_keyboard()
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
 
 
 def set_choosing_option_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
@@ -171,7 +171,7 @@ def set_choosing_option_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
         bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
         return
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
     users_db.set_stage(user.uid, new_stage)
 
 
@@ -209,7 +209,7 @@ def set_stat_type_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None
         manager_common_handler(bot, users_db, user, "set_getting_email_screen")
 
     elif user.message.text == lc.translate(user.lang, "back"):
-        bot.reply_to(user.message, lc.translate(user.lang, "choose_option"),
+        bot.send_message(user.uid, lc.translate(user.lang, "choose_option"),
                      reply_markup=keyboards.get_manager_keyboard(user.lang))
         users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
 
@@ -226,7 +226,7 @@ def set_ask_measure_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> No
             ask_measure_list = stat_maker.get_measure_list(user.uid, comp_context.split())
         except:
             print("Бэк не врубили")
-            bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
+            bot.send_message(user.uid, lc.translate(user.lang, "server_response_error"))
             return
 
         for worker in ask_measure_list:
@@ -235,12 +235,12 @@ def set_ask_measure_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> No
             except telebot.apihelper.ApiException:
                 print("Попытка отправить на несуществующий tg_id {}".format(worker["telegram_id"]))
 
-        bot.reply_to(user.message, lc.translate(user.lang, "asked_measure_for_info"),
+        bot.send_message(user.uid, lc.translate(user.lang, "asked_measure_for_info"),
                      reply_markup=keyboards.get_manager_keyboard(user.lang))
         users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
 
     elif user.message.text == lc.translate(user.lang, "no"):
-        bot.reply_to(user.message, lc.translate(user.lang, "choose_option"),
+        bot.send_message(user.uid, lc.translate(user.lang, "choose_option"),
                      reply_markup=keyboards.get_manager_keyboard(user.lang))
         users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
 
@@ -258,7 +258,7 @@ def set_get_email_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None
                 ar.send_file_on_email(user.uid, company_guid, user.message.text)
             except:
                 print("Бэк не врубили")
-                bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
+                bot.send_message(user.uid, lc.translate(user.lang, "server_response_error"))
                 return
 
         reply_mes = lc.translate(user.lang, "sending_stats")
@@ -272,7 +272,7 @@ def set_get_email_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None
         keyboard = keyboards.get_stat_types_keyboard(user.lang)
         new_stage = st.ManagerStage.GET_STAT_TYPE
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
     users_db.set_stage(user.uid, new_stage)
 
 
@@ -291,7 +291,7 @@ def set_validation_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
             keyboard = keyboards.get_back_keyboard(user.lang)
 
     elif temp == lc.translate(user.lang, "back"):
-        bot.reply_to(user.message, lc.translate(user.lang, "choose_option"), reply_markup=keyboards.get_employee_keyboard(user.lang))
+        bot.send_message(user.uid, lc.translate(user.lang, "choose_option"), reply_markup=keyboards.get_employee_keyboard(user.lang))
         users_db.set_stage(user.uid, st.ManagerStage.CHOOSING_OPTION)
         return
 
@@ -300,7 +300,7 @@ def set_validation_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
         bot.send_message(user.uid, lc.translate(user.lang, "insert_temp"))
         return
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
 
 
 def set_accept_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
@@ -318,5 +318,5 @@ def set_accept_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> No
         bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
         return
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
     users_db.set_stage(user.uid, new_stage)

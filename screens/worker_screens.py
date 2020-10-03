@@ -25,7 +25,7 @@ def set_getting_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> N
         bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
         return
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
     users_db.set_stage(user.uid, new_stage)
 
 
@@ -44,7 +44,7 @@ def set_validation_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
             keyboard = keyboards.get_back_keyboard(user.lang)
 
     elif temp == lc.translate(user.lang, "back"):
-        bot.reply_to(user.message, lc.translate(user.lang, "choose_option"), reply_markup=keyboards.get_employee_keyboard(user.lang))
+        bot.send_message(user.uid, lc.translate(user.lang, "choose_option"), reply_markup=keyboards.get_employee_keyboard(user.lang))
         users_db.set_stage(user.uid, st.WorkerStage.GET_TEMP)
         return
 
@@ -53,7 +53,7 @@ def set_validation_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
         bot.send_message(user.uid, lc.translate(user.lang, "insert_temp"))
         return
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
 
 
 def set_accept_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
@@ -71,7 +71,7 @@ def set_accept_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> No
         bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
         return
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
     users_db.set_stage(user.uid, new_stage)
 
 
@@ -80,7 +80,7 @@ def set_getting_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> 
         companies = ar.get_companies_list(user.uid)
     except:
         print("бек не врубили")
-        bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
+        bot.send_message(user.uid, lc.translate(user.lang, "server_response_error"))
         return
 
     if len(companies) == 1:
@@ -92,7 +92,7 @@ def set_getting_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> 
             ar.add_health_data(user.uid, companies[0]["guid"], users_db.get_temp(user.uid))
         except:
             print("бек не врубили")
-            bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
+            bot.send_message(user.uid, lc.translate(user.lang, "server_response_error"))
             return
 
     elif len(companies) > 1:
@@ -102,10 +102,10 @@ def set_getting_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> 
 
     else:
         user_data_deletion(users_db, user.uid)
-        bot.reply_to(user.message, lc.translate(user.lang, "access_error"))
+        bot.send_message(user.uid, lc.translate(user.lang, "access_error"))
         return
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
     users_db.set_stage(user.uid, new_stage)
 
 
@@ -123,7 +123,7 @@ def set_getting_company_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
         bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
         return
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
     users_db.set_stage(user.uid, st.WorkerStage.GET_TEMP)
 
 
