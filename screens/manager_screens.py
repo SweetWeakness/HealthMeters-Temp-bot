@@ -77,6 +77,7 @@ def send_file_stat(bot: telebot.TeleBot, user: UserInfo) -> None:
         bot.send_document(user.uid, excel_df,
                           reply_markup=keyboards.get_manager_keyboard(user.lang))
         # todo delete file after sending and also fix problem on heroku
+    bot.send_message(user.uid, "Not implemented", reply_markup=keyboards.get_manager_keyboard(user.lang))
 
 
 def set_getting_email_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
