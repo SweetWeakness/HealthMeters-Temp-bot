@@ -2,7 +2,7 @@ import telebot
 
 import api_requests as ar
 import stages as st
-import keyboards
+from screens import keyboards
 import localizations.localization as lc
 
 
@@ -11,9 +11,18 @@ class UserInfo:
         self.message = message
         self.uid = message.from_user.id
         self.companies = []
-        self.stage = users_db.get_stage(self.uid)
-        self.role = users_db.get_role(self.uid)
-        self.lang = users_db.get_language(self.uid)
+        if users_db.stage_exist(self.uid):
+            self.stage = users_db.get_stage(self.uid)
+        else:
+            self.stage = "no stage"
+        if users_db.role_exist(self.uid):
+            self.role = users_db.get_role(self.uid)
+        else:
+            self.role = "no role"
+        if users_db.language_exist(self.uid):
+            self.lang = users_db.get_language(self.uid)
+        else:
+            self.lang = "ru"
 
     def set_role(self, role) -> None:
         self.role = role
@@ -25,31 +34,24 @@ class UserInfo:
         self.lang = language
 
 
-def set_changing_role_screen(bot: telebot.TeleBot, users_db, user_list: list) -> None:
-    for user in user_list:
-        lang = users_db.get_language(user["telegram_id"])
-        tg_id = user["telegram_id"]
+def user_data_deletion(users_db, tg_id: int):
+    if users_db.role_exist(tg_id):
+        users_db.delete_role(tg_id)
 
-        if user["role"] == "worker":
-            try:
-                bot.send_message(tg_id, "Ваша роль была изменена", reply_markup=keyboards.get_employee_keyboard(lang))
-            except telebot.apihelper.ApiException:
-                print("Попытка отправить на несуществующий tg_id {}".format(tg_id))
+    if users_db.data_exist(tg_id):
+        users_db.delete_data(tg_id)
 
-            users_db.set_role(tg_id, st.Role.WORKER)
-            users_db.set_stage(tg_id, st.WorkerStage.GET_TEMP)
+    if users_db.stage_exist(tg_id):
+        users_db.delete_stage(tg_id)
 
-        elif user["role"] == "manager":
-            try:
-                bot.send_message(tg_id, "Ваша роль была изменена", reply_markup=keyboards.get_manager_keyboard(lang))
-            except telebot.apihelper.ApiException:
-                print("Попытка отправить на несуществующий tg_id {}".format(tg_id))
+    if users_db.comp_context_exist(tg_id):
+        users_db.delete_comp_context(tg_id)
 
-            users_db.set_role(tg_id, st.Role.MANAGER)
-            users_db.set_stage(tg_id, st.ManagerStage.CHOOSING_OPTION)
+    if users_db.language_exist(tg_id):
+        users_db.delete_language(tg_id)
 
-        if users_db.data_exist(tg_id):
-            users_db.delete_data(tg_id)
+    if users_db.temp_exist(tg_id):
+        users_db.delete_temp(tg_id)
 
 
 def set_start_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
@@ -102,7 +104,7 @@ def set_company_context(users_db, user: UserInfo) -> None:
     companies = ar.get_companies_list(user.uid)
 
     if len(companies) == 0:
-        users_db.set_role(user.uid, st.Role.NOBODY)
+        user_data_deletion(users_db, user.uid)
         return
 
     if user.message.text == lc.translate(user.lang, "choose_all"):
@@ -116,3 +118,59 @@ def set_company_context(users_db, user: UserInfo) -> None:
             if company["name"] == user.message.text:
                 users_db.set_comp_context(user.uid, company["guid"])
                 return
+
+
+def set_deleting_screen(bot: telebot.TeleBot, users_db, tg_id: int) -> None:
+    user_data_deletion(users_db, tg_id)
+
+    bot.send_message(tg_id, "Вас удалили из базы данных. До свидания.")
+
+
+def set_changing_role_screen(bot: telebot.TeleBot, users_db, user) -> None:
+    tg_id = user["telegram_id"]
+
+    if users_db.role_exist(tg_id): # means also that stage exist
+        if users_db.language_exist(tg_id):
+            lang = users_db.get_language(tg_id)
+        else:
+            lang = "ru"
+
+        prev_stage = users_db.get_stage(tg_id)
+        prev_role = users_db.get_role(tg_id)
+
+        if user["role"] == "worker":
+            if prev_role == "Role.MANAGER":
+                # current is ManagerStage and Role.MANAGER
+                if prev_stage != "ManagerStage.GET_LANG":
+                    try:
+                        bot.send_message(tg_id, "Ваша роль была изменена\n"
+                                                "Выберите опцию:", reply_markup=keyboards.get_employee_keyboard(lang))
+                    except telebot.apihelper.ApiException:
+                        print("Попытка отправить на несуществующий tg_id {}".format(tg_id))
+
+                    users_db.set_stage(tg_id, st.WorkerStage.GET_TEMP)
+
+                else:
+                    users_db.set_stage(tg_id, st.WorkerStage.GET_LANG)
+
+                users_db.set_role(tg_id, st.Role.WORKER)
+
+        elif user["role"] == "manager":
+            if prev_role == "Role.WORKER":
+                # current WorkerStage and Role.WORKER
+                if users_db.get_stage(tg_id) != "WorkerStage.GET_LANG":
+                    try:
+                        bot.send_message(tg_id, "Ваша роль была изменена\n"
+                                                "Выберите опцию:", reply_markup=keyboards.get_manager_keyboard(lang))
+                    except telebot.apihelper.ApiException:
+                        print("Попытка отправить на несуществующий tg_id {}".format(tg_id))
+
+                    users_db.set_stage(tg_id, st.ManagerStage.CHOOSING_OPTION)
+
+                else:
+                    users_db.set_stage(tg_id, st.ManagerStage.GET_LANG)
+
+                users_db.set_role(tg_id, st.Role.MANAGER)
+
+        if users_db.data_exist(tg_id):
+            users_db.delete_data(tg_id)

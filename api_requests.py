@@ -82,3 +82,19 @@ def get_base64_file(uid: int, company_guid: str) -> str:
     respond_json = send_request("/file_statistic", data)
 
     return respond_json["df"]
+
+
+def send_file_on_email(uid: int, company_guid: str, email: str) -> bool:
+    data = {
+        "telegram_id": uid,
+        "company": company_guid,
+        "type": "email",
+        "email": email
+    }
+    respond_json = send_request("/file_statistic", data)
+
+    if "status" in respond_json:
+        if respond_json["status"] == "ok":
+            return True
+
+    return False

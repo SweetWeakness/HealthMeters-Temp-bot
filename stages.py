@@ -11,6 +11,9 @@ class ManagerStage(IntFlag):
     GET_STAT_TYPE = 7
     ASK_MEASURE = 8
     GET_EMAIL = 9
+    VALIDATION_TEMP = 10
+    ACCEPT_TEMP = 11
+    GET_PHOTO = 12
 
 
 class WorkerStage(IntFlag):
@@ -19,7 +22,6 @@ class WorkerStage(IntFlag):
     VALIDATION_TEMP = 10
     ACCEPT_TEMP = 11
     GET_PHOTO = 12
-    ACCEPT_PHOTO = 13
     GET_COMPANY = 14
 
 

@@ -48,8 +48,8 @@ def get_temp_stats(manager_uid: int, companies_list: list, lang: str) -> list:
     second_block = []
     third_block = []
 
-    for company in companies_list:
-        workers_stats = ar.get_workers_stats(manager_uid, company)
+    for company_guid in companies_list:
+        workers_stats = ar.get_workers_stats(manager_uid, company_guid)
 
         for stat in workers_stats:
             if stat["last_temp"] is not None:
