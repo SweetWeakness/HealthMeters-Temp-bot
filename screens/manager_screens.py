@@ -61,7 +61,8 @@ def ask_measure(bot: telebot.TeleBot, user: UserInfo):
 
 def send_file_stat(bot: telebot.TeleBot, user: UserInfo) -> None:
     bot.send_message(user.uid, lc.translate(user.lang, "looking_for_stats"))
-
+    # до лучших времен (пока на хироку)
+    return
     for company_guid in user.companies:
         df = ar.get_base64_file(user.uid, company_guid)
         df = pickle.loads(base64.b64decode(df))
