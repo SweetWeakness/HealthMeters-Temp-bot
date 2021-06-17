@@ -12,20 +12,8 @@ def get_token() -> str:
     return config["release"]["token"]
 
 
-def get_backend_url() -> str:
-    return config[config_state]["backend_url"]
-
-
 def get_webhook_url() -> str:
     return "%s/%s" % (config[config_state]["webhook_url"], get_token())
-
-
-def get_redis_url() -> str:
-    return config[config_state]["redis_url"]
-
-
-def get_db_index() -> str:
-    return config[config_state]["db_index"]
 
 
 def get_server_host() -> str:
