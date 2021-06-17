@@ -25,9 +25,19 @@ webhook_url = cfg.get_webhook_url()
 def start(message: telebot.types.Message) -> None:
     if message.from_user.id == 410891371:
         bot.reply_to(message, "Здарова, мужик! Жду твоих фоток UWU")
+    else:
+        bot.reply_to(message, "Здарова, мужик! Жду твоих фоток UWU\n"
+                              "За доступом к нему -> @definitely_the_chosen_one\n"
+                              "(напиши цифру, чтобы получить последние n фоток)")
+
+
+@bot.message_handler(commands=["clear"])
+def clear(message: telebot.types.Message) -> None:
+    if message.from_user.id == 410891371:
+        bot.reply_to(message, "Отчистил базу данных")
         api_db.first_commit()
     else:
-        bot.reply_to(message, "За доступом к нему -> @definitely_the_chosen_one OWO")
+        bot.reply_to(message, "Ебааааать, ты что себе позволяешь???")
 
 
 @bot.message_handler(content_types=["text"])
@@ -44,9 +54,9 @@ def text_handler(message: telebot.types.Message) -> None:
 
 @bot.message_handler(content_types=["photo"])
 def photo_handler(message: telebot.types.Message) -> None:
-    if message.from_user.id != 410891371:
-        bot.reply_to(message, "А вот хуй тебе, загружать может тока админ -_-")
-        return
+    #if message.from_user.id != 410891371:
+    #    bot.reply_to(message, "А вот хуй тебе, загружать может тока админ -_-")
+    #    return
 
     fileID = message.photo[-1].file_id
     file = bot.get_file(fileID)
