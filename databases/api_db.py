@@ -17,10 +17,10 @@ def add_photo(pic_bytes):
     print("db changed (added)")
 
 
-def get_photo(p_num):
+def get_photo(offset):
     meta_info = User.query.filter_by(num=0).first()
-    if p_num <= meta_info.len:
-        user_model = User.query.filter_by(num=meta_info.len - p_num + 1).first()
+    if offset < meta_info.len:
+        user_model = User.query.filter_by(num=meta_info.len - offset).first()
         return user_model.picture
     else:
         return -1

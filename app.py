@@ -45,13 +45,14 @@ def text_handler(message: telebot.types.Message) -> None:
     tmp = int(message.text)
     if tmp <= 0:
         tmp = 1
-    while tmp > 0:
-        img = api_db.get_photo(tmp)
+    i = 0
+    while i < tmp:
+        img = api_db.get_photo(i)
         if img != -1:
             bot.send_photo(chat_id=message.from_user.id, photo=img)
         else:
             break
-        tmp -= 1
+        i += 1
 
 
 @bot.message_handler(content_types=["photo"])
