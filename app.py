@@ -49,6 +49,8 @@ def text_handler(message: telebot.types.Message) -> None:
         img = api_db.get_photo(tmp)
         if img != -1:
             bot.send_photo(chat_id=message.from_user.id, photo=img)
+        else:
+            break
         tmp -= 1
 
 
