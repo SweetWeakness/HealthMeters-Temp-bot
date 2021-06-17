@@ -1,26 +1,24 @@
 from app import db
 from databases.models import User
+import datetime
 
 
 def first_commit():
     User.query.delete()
-    db.session.add(User(num=0, len=0))
     db.session.commit()
 
 
 def add_photo(pic_bytes):
-    meta_info = User.query.filter_by(num=0).first()
-    meta_info.len += 1
-
-    db.session.add(User(num=meta_info.len, picture=pic_bytes))
+    db.session.add(User(date=datetime.datetime.today(), picture=pic_bytes))
     db.session.commit()
     print("db changed (added)")
 
 
-def get_photo(offset):
-    meta_info = User.query.filter_by(num=0).first()
-    if offset < meta_info.len:
-        user_model = User.query.filter_by(num=meta_info.len - offset).first()
-        return user_model.picture
-    else:
-        return -1
+def get_photos(amount):
+    users = User.query.order_by(User.date).all()
+    if amount > len(users):
+        amount = len(users)
+
+    ans = [user.picture for user in users]
+
+    return reversed(ans[len(ans) - amount:])

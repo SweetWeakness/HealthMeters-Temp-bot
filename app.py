@@ -37,17 +37,12 @@ def clear(message: telebot.types.Message) -> None:
 
 @bot.message_handler(content_types=["text"])
 def text_handler(message: telebot.types.Message) -> None:
-    tmp = int(message.text)
-    if tmp <= 0:
-        tmp = 1
-    i = 0
-    while i < tmp:
-        img = api_db.get_photo(i)
-        if img != -1:
-            bot.send_photo(chat_id=message.from_user.id, photo=img)
-        else:
-            break
-        i += 1
+    amount = int(message.text)
+    if amount <= 0:
+        amount = 1
+    imgs = api_db.get_photos(amount)
+    for img in imgs:
+        bot.send_photo(chat_id=message.from_user.id, photo=img)
 
 
 @bot.message_handler(content_types=["photo"])
@@ -56,10 +51,10 @@ def photo_handler(message: telebot.types.Message) -> None:
     #    bot.reply_to(message, "А вот хуй тебе, загружать может тока админ -_-")
     #    return
 
-    fileID = message.photo[-1].file_id
-    file = bot.get_file(fileID)
+    file_id = message.photo[-1].file_id
+    file = bot.get_file(file_id)
     downloaded_file = bot.download_file(file.file_path)
-    print(file.file_path)
+    #print(file.file_path)
 
     api_db.add_photo(downloaded_file)
     #with open("image.jpg", 'wb') as new_file:
