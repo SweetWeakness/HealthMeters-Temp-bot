@@ -23,12 +23,7 @@ webhook_url = cfg.get_webhook_url()
 
 @bot.message_handler(commands=["start"])
 def start(message: telebot.types.Message) -> None:
-    if message.from_user.id == 410891371:
-        bot.reply_to(message, "Здарова, мужик! Жду твоих фоток UWU")
-    else:
-        bot.reply_to(message, "Здарова, мужик! Жду твоих фоток UWU\n"
-                              "За доступом к нему -> @definitely_the_chosen_one\n"
-                              "(напиши цифру, чтобы получить последние n фоток)")
+    bot.send_message(message.from_user.id, "Здарова, мужик! Жду твоих фоток UWU")
 
 
 @bot.message_handler(commands=["clear"])
