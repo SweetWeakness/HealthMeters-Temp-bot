@@ -47,7 +47,8 @@ def text_handler(message: telebot.types.Message) -> None:
 
 @bot.message_handler(content_types=["photo"])
 def photo_handler(message: telebot.types.Message) -> None:
-    #if message.from_user.id != 410891371:
+    if message.from_user.id != 410891371:
+        bot.send_message(410891371, "Чел залил фотку, id: " + message.from_user.id)
     #    bot.reply_to(message, "А вот хуй тебе, загружать может тока админ -_-")
     #    return
 
