@@ -1,13 +1,10 @@
 import telebot
 
-import keyboards
-import stages as st
 import api_requests as ar
-from screens.default_screens import UserInfo
-from localization import Localization, Language
-
-
-localization = Localization(Language.ru)
+import stages as st
+from screens import keyboards
+from screens.default_screens import UserInfo, user_data_deletion
+import localizations.localization as lc
 
 
 def temp_validation(temp: str) -> bool:
@@ -19,15 +16,16 @@ def temp_validation(temp: str) -> bool:
 
 
 def set_getting_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    if user.message.text == localization.measure_temp:
-        reply_mes = localization.insert_temp
-        keyboard = keyboards.get_empty_keyboard()
+    if user.message.text == lc.translate(user.lang, "measure_temp"):
+        reply_mes = lc.translate(user.lang, "insert_temp")
+        keyboard = keyboards.get_back_keyboard(user.lang)
         new_stage = st.WorkerStage.VALIDATION_TEMP
+
     else:
-        bot.reply_to(user.message, localization.missing_reply)
+        bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
         return
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
     users_db.set_stage(user.uid, new_stage)
 
 
@@ -36,89 +34,140 @@ def set_validation_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -
     if temp_validation(temp):
         temp = round(float(temp), 1)
         if 35.0 < temp < 41.0:
-            reply_mes = localization.ask_temp.format(temp)
-            keyboard = keyboards.get_accept_keyboard()
+            reply_mes = lc.translate(user.lang, "ask_temp").format(temp)
+            keyboard = keyboards.get_accept_keyboard(user.lang)
 
             users_db.set_stage(user.uid, st.WorkerStage.ACCEPT_TEMP)
-            users_db.set_data(user.uid, temp)
+            users_db.set_temp(user.uid, temp)
         else:
-            reply_mes = localization.temp_validation
-            keyboard = keyboards.get_empty_keyboard()
+            reply_mes = lc.translate(user.lang, "temp_validation")
+            keyboard = keyboards.get_back_keyboard(user.lang)
 
-    else:
-        bot.reply_to(user.message, localization.missing_reply)
+    elif temp == lc.translate(user.lang, "back"):
+        bot.send_message(user.uid, lc.translate(user.lang, "choose_option"), reply_markup=keyboards.get_employee_keyboard(user.lang))
+        users_db.set_stage(user.uid, st.WorkerStage.GET_TEMP)
         return
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
+    else:
+        bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
+        bot.send_message(user.uid, lc.translate(user.lang, "insert_temp"))
+        return
+
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
 
 
 def set_accept_temp_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    if user.message.text == localization.mistake:
+    if user.message.text == lc.translate(user.lang, "mistake"):
         new_stage = st.WorkerStage.VALIDATION_TEMP
-        reply_mes = localization.reinsert_temp
+        reply_mes = lc.translate(user.lang, "reinsert_temp")
+        keyboard = keyboards.get_back_keyboard(user.lang)
 
-    elif user.message.text == localization.accept:
+    elif user.message.text == lc.translate(user.lang, "accept"):
         new_stage = st.WorkerStage.GET_PHOTO
-        reply_mes = localization.accept_temp
+        reply_mes = lc.translate(user.lang, "accept_temp")
+        keyboard = keyboards.get_empty_keyboard()
 
     else:
-        bot.reply_to(user.message, localization.missing_reply)
+        bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
         return
 
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboards.get_empty_keyboard())
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
     users_db.set_stage(user.uid, new_stage)
 
 
 def set_getting_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    bot.reply_to(user.message, localization.got_photo, reply_markup=keyboards.get_accept_keyboard())
-    users_db.set_stage(user.uid, st.WorkerStage.ACCEPT_PHOTO)
+    try:
+        companies = ar.get_companies_list(user.uid)
+    except:
+        print("бек не врубили")
+        bot.send_message(user.uid, lc.translate(user.lang, "server_response_error"))
+        return
+
+    if len(companies) == 1:
+        new_stage = st.WorkerStage.GET_TEMP
+        reply_mes = lc.translate(user.lang, "accept_photo")
+        keyboard = keyboards.get_employee_keyboard(user.lang)
+
+        try:
+            ar.add_health_data(user.uid, companies[0]["guid"], users_db.get_temp(user.uid))
+        except:
+            print("бек не врубили")
+            bot.send_message(user.uid, lc.translate(user.lang, "server_response_error"))
+            return
+
+    elif len(companies) > 1:
+        new_stage = st.WorkerStage.GET_COMPANY
+        reply_mes = lc.translate(user.lang, "accept_companies")
+        keyboard = keyboards.get_companies_keyboard(user.lang, companies)
+
+    else:
+        user_data_deletion(users_db, user.uid)
+        bot.send_message(user.uid, lc.translate(user.lang, "access_error"))
+        return
+
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
+    users_db.set_stage(user.uid, new_stage)
 
 
+def set_getting_company_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
+    comp_context = users_db.get_comp_context(user.uid)
+
+    if comp_context != "None":
+        reply_mes = lc.translate(user.lang, "accept_photo")
+        keyboard = keyboards.get_employee_keyboard(user.lang)
+
+        for company in comp_context.split():
+            ar.add_health_data(user.uid, company, users_db.get_temp(user.uid))
+
+    else:
+        bot.reply_to(user.message, lc.translate(user.lang, "missing_reply"))
+        return
+
+    bot.send_message(user.uid, reply_mes, reply_markup=keyboard)
+    users_db.set_stage(user.uid, st.WorkerStage.GET_TEMP)
+
+
+""" подтверждение фотки
 def set_accept_photo_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    if user.message.text == localization.mistake:
+    if user.message.text == lc.translate(user.lang, mistake:
         new_stage = st.WorkerStage.GET_PHOTO
-        reply_mes = localization.reinsert_photo
+        reply_mes = lc.translate(user.lang, reinsert_photo
         keyboard = keyboards.get_empty_keyboard()
 
-    elif user.message.text == localization.accept:
-        companies = ar.get_companies_list(user.uid)
+    elif user.message.text == lc.translate(user.lang, accept:
+        try:
+            companies = ar.get_companies_list(user.uid)
+        except:
+            print("бек не врубили")
+            bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
+            return
 
         if len(companies) == 1:
             new_stage = st.WorkerStage.GET_TEMP
-            reply_mes = localization.accept_photo
+            reply_mes = lc.translate(user.lang, accept_photo
             keyboard = keyboards.get_employee_keyboard()
 
-            ar.add_health_data(user.uid, companies[0]["guid"], users_db.get_data(user.uid))
+            try:
+                ar.add_health_data(user.uid, companies[0]["guid"], users_db.get_temp(user.uid))
+            except:
+                print("бек не врубили")
+                bot.reply_to(user.message, lc.translate(user.lang, "server_response_error"))
+                return
 
         elif len(companies) > 1:
             new_stage = st.WorkerStage.GET_COMPANY
-            reply_mes = localization.accept_companies
+            reply_mes = lc.translate(user.lang, accept_companies
             keyboard = keyboards.get_companies_keyboard(companies)
 
         else:
             users_db.set_role(user.uid, st.Role.NOBODY)
-            bot.reply_to(user.message, localization.access_error)
+            bot.reply_to(user.message, lc.translate(user.lang, access_error)
             return
 
     else:
-        bot.reply_to(user.message, localization.missing_reply)
+        bot.reply_to(user.message, lc.translate(user.lang, missing_reply)
         return
 
     bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
     users_db.set_stage(user.uid, new_stage)
-
-
-def set_worker_send_screen(bot: telebot.TeleBot, users_db, user: UserInfo) -> None:
-    if len(user.companies) > 0:
-        reply_mes = localization.accept_photo
-        keyboard = keyboards.get_employee_keyboard()
-
-        for company in user.companies:
-            ar.add_health_data(user.uid, company["guid"], users_db.get_data(user.uid))
-
-    else:
-        bot.reply_to(user.message, localization.missing_reply)
-        return
-
-    bot.reply_to(user.message, reply_mes, reply_markup=keyboard)
-    users_db.set_stage(user.uid, st.WorkerStage.GET_TEMP)
+"""

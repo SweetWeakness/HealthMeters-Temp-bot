@@ -1,78 +1,100 @@
 import requests
-import configparser
+import json
+
+from config import config_manager as cfg
+
+server_url = cfg.get_backend_url()
 
 
-config = configparser.ConfigParser()
-config.read("config.ini")
-
-server_url = config["release"]["server_url"]
+def send_request(endpoint: str, data: dict) -> dict:
+    body = json.dumps(data)
+    headers = {
+        'content-type': "application/json",
+    }
+    response = requests.post(server_url + endpoint, headers=headers, data=body)
+    return response.json()
 
 
 def get_companies_list(uid: int) -> list:
-    try:
-        res = requests.post(server_url + "/companies", data={
-            "telegram_id": uid,
-        })
+    data = {
+        "telegram_id": uid,
+    }
+    respond_json = send_request("/companies", data)
 
-    except requests.exceptions.RequestException:
-        return []
-
-    res_json = res.json()
-    return res_json["companies"]
+    return respond_json["companies"]
 
 
 def get_role(uid: int, company_guid: str) -> str:
-    try:
-        res = requests.post(server_url + "/role", data={
-            "telegram_id": uid,
-            "company": company_guid
-        })
+    data = {
+        "telegram_id": uid,
+        "company": company_guid
+    }
+    respond_json = send_request("/role", data)
 
-    except requests.exceptions.RequestException:
-        return "no role"
-
-    res_json = res.json()
-    return res_json["role"]
+    return respond_json["role"]
 
 
 def get_attached_workers(uid: int, company_guid: str) -> list:
-    try:
-        res = requests.post(server_url + "/attached_workers", data={
-            "telegram_id": uid,
-            "company": company_guid
-        })
+    data = {
+        "telegram_id": uid,
+        "company": company_guid
+    }
+    respond_json = send_request("/attached_workers", data)
 
-    except requests.exceptions.RequestException:
-        return []
-
-    res_json = res.json()
-    return res_json["users"]
+    return respond_json["users"]
 
 
 def get_workers_stats(uid: int, company_guid: str) -> list:
-    try:
-        res = requests.post(server_url + "/attached_workers_statistics", data={
-            "telegram_id": uid,
-            "company": company_guid
-        })
+    data = {
+        "telegram_id": uid,
+        "company": company_guid
+    }
+    respond_json = send_request("/attached_workers_statistics", data)
 
-    except requests.exceptions.RequestException:
-        return []
-
-    res_json = res.json()
-    return res_json["users"]
+    return respond_json["users"]
 
 
-def add_health_data(uid: int, company_guid: str, temp: float) -> dict():
-    try:
-        res = requests.post(server_url + "/add_health_data", data={
-            "telegram_id": uid,
-            "company": company_guid,
-            "temperature": temp
-        })
+def add_health_data(uid: int, company_guid: str, temp: float) -> bool:
+    data = {
+        "telegram_id": uid,
+        "company": company_guid,
+        "temperature": temp
+    }
+    respond_json = send_request("/add_health_data", data)
 
-    except requests.exceptions.RequestException:
-        return "False"
+    if "status" in respond_json:
+        if respond_json["status"] == "ok":
+            return True
 
-    res_json = res.json()
-    return res_json["status"]
+    return False
+
+
+def synchronize():
+    requests.get(server_url + "/synchronize")
+
+
+def get_base64_file(uid: int, company_guid: str) -> str:
+    data = {
+        "telegram_id": uid,
+        "company": company_guid,
+        "type": "telegram"
+    }
+    respond_json = send_request("/file_statistic", data)
+
+    return respond_json["df"]
+
+
+def send_file_on_email(uid: int, company_guid: str, email: str) -> bool:
+    data = {
+        "telegram_id": uid,
+        "company": company_guid,
+        "type": "email",
+        "email": email
+    }
+    respond_json = send_request("/file_statistic", data)
+
+    if "status" in respond_json:
+        if respond_json["status"] == "ok":
+            return True
+
+    return False
