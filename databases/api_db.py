@@ -20,7 +20,7 @@ def add_note(user_id, amount):
     dt_now = datetime.datetime.now()
     if user_garbage is not None:
         if user_garbage.date + datetime.timedelta(seconds=10) > dt_now:
-            return "Больной нахуй, 2 минуты еще не прошло" + str(dt_now)
+            return [1, "Больной нахуй, 2 минуты еще не прошло"]
 
     db.session.add(User(date=dt_now, id=user_id))
     if amount == 2:
@@ -29,7 +29,7 @@ def add_note(user_id, amount):
     db.session.commit()
     print("db changed (added)")
 
-    return "Добавил твой отчет в бд, имеем:"
+    return [0, "Добавил твой отчет в бд, имеем:"]
 
 
 def get_stats(user_id):

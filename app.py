@@ -46,9 +46,13 @@ def clear(message: telebot.types.Message) -> None:
 
 
 def code_breaker(message, cnt):
-    bot.send_message(message.from_user.id, api_db.add_note(message.from_user.id, cnt))
+    result = api_db.add_note(message.from_user.id, cnt)
+    bot.send_message(message.from_user.id, result[1])
+    if result[0] != 0:
+        return
     exit_code = api_db.get_stats(message.from_user.id)
     bot.send_message(message.from_user.id, exit_code[0])
+
     for user in exit_code[1:]:
         if message.from_user.id == user:
             bot.send_message(user, "Как видишь, ты проебываешь в этих собачьих гонках(((")
