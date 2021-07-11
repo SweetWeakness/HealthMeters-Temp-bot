@@ -7,7 +7,7 @@ from databases.users import voc, users
 
 def first_commit():
     User.query.delete()
-    dt_now = datetime.datetime.today()
+    dt_now = datetime.datetime.now()
     dlt = datetime.timedelta(seconds=1)
     for user in users:
         db.session.add(User(date=dt_now, id=user))
@@ -17,7 +17,7 @@ def first_commit():
 
 def add_note(user_id, amount):
     user_garbage = User.query.filter_by(id=user_id).order_by(User.date.desc()).first()
-    dt_now = datetime.datetime.today()
+    dt_now = datetime.datetime.now()
     if user_garbage is not None:
         if user_garbage.date + datetime.timedelta(seconds=10) > dt_now:
             return "Больной нахуй, 2 минуты еще не прошло" + str(user_garbage.date) + " " + str(datetime.timedelta(seconds=10)) + " " + str(dt_now)
