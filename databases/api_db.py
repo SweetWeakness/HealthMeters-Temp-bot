@@ -19,7 +19,7 @@ def add_note(user_id, amount):
     user_garbage = User.query.filter_by(id=user_id).order_by(User.date.desc()).first()
     dt_now = datetime.datetime.now()
     if user_garbage is not None:
-        if user_garbage.date + datetime.timedelta(seconds=10) > dt_now:
+        if user_garbage.date + datetime.timedelta(minutes=2) > dt_now:
             return [1, "Больной нахуй, 2 минуты еще не прошло"]
 
     db.session.add(User(date=dt_now, id=user_id))
