@@ -1,5 +1,5 @@
 telebot
-Flask==1.1.2
+Flask==2.3.2
 pyTelegramBotAPI==3.7.2
 requests==2.24.0
 redis==3.5.3
